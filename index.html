@@ -472,10 +472,14 @@ document.querySelectorAll('#diac .dia-ex').forEach(function(ex){
   const key=raw.trim();if(!key)return raw;
   const row=bySource.get(key);
   if(row&&row[langs[active]])return raw.replace(key,row[langs[active]]);
-  let result=raw;
-  for(const [source,r] of bySource){
-   if(source.length<4||!r[langs[active]]||source===key)continue;
-   if(result.includes(source))result=result.split(source).join(r[langs[active]]);
+  // Translate only original source spans. Never retranslate inserted translations.
+  const entries=[...bySource].filter(([source,r])=>source.length>=4&&r[langs[active]]&&source!==key)
+    .sort((a,b)=>b[0].length-a[0].length);
+  let result="",pos=0;
+  while(pos<raw.length){
+   const match=entries.find(([source])=>raw.startsWith(source,pos));
+   if(match){result+=match[1][langs[active]];pos+=match[0].length;}
+   else{result+=raw[pos];pos++;}
   }
   return result;
  }
