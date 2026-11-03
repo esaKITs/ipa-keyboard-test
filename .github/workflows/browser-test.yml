@@ -1,0 +1,61 @@
+name: Browser verification of isolated IPA Keyboard test
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/browser-test.yml, index.html, preview/index.html]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium webkit
+      - name: Run Chromium and WebKit local-browser tests
+        shell: bash
+        run: |
+          python3 -m http.server 8765 >/tmp/ipa-browser-server.log 2>&1 &
+          cat > /tmp/ipa-test.cjs <<'JS'
+          const {chromium,webkit}=require(process.cwd()+'/node_modules/playwright');
+          (async()=>{
+            for(const [engineName,engine] of [['chromium',chromium],['webkit',webkit]]){
+              const browser=await engine.launch({headless:true});
+              const page=await browser.newPage({viewport:{width:390,height:844}});
+              const errors=[];
+              page.on('pageerror',e=>errors.push(String(e)));
+              await page.goto('http://127.0.0.1:8765/',{waitUntil:'load'});
+              await page.locator('#languageSelect').selectOption('en');
+              const phrases=await page.locator('.dia-ex').allTextContents();
+              for(const target of ['e̝ (ɹ̝ = voiced alveolar fricative)','e̞ (β̞ = voiced bilabial approximant)']){
+                if(!phrases.some(x=>x.trim()===target))throw Error(engineName+': missing translated example '+target+'; observed '+phrases.filter(x=>x.includes('ɹ̝')||x.includes('β̞')).join('; '));
+              }
+              for(const [lang,term] of [['pt-BR','fricativa alveolar vozeada'],['fa','سایشی لثوی واکدار'],['ja','有声歯茎摩擦音'],['ja-osaka','有声歯茎摩擦音']]){
+                await page.locator('#languageSelect').selectOption(lang);
+                const values=await page.locator('.dia-ex').allTextContents();
+                if(!values.some(v=>v.includes(term)))throw Error(engineName+': missing '+term+' in '+lang);
+              }
+              const key=page.locator('button.key.ipa[data-sym]').first();
+              const sym=await key.getAttribute('data-sym');
+              await key.click();
+              const after=await page.locator('#out').inputValue();
+              if(!after.includes(sym))throw Error(engineName+': key press did not insert '+sym+' got '+after);
+              await page.locator('#undo').click();
+              const undone=await page.locator('#out').inputValue();
+              if(undone===after)throw Error(engineName+': Undo failed');
+              await page.locator('#redo').click();
+              const redone=await page.locator('#out').inputValue();
+              if(redone!==after)throw Error(engineName+': Redo failed');
+              if(errors.length)throw Error(engineName+': script errors '+errors.join(' | '));
+              console.log('PASS',engineName,'IPA examples in 5 languages; key input; Undo; Redo; no page errors');
+              await page.screenshot({path:'/tmp/ipa-test-'+engineName+'.png',fullPage:true});
+              await browser.close();
+            }
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node /tmp/ipa-test.cjs
