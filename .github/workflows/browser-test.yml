@@ -67,6 +67,16 @@ jobs:
                 if(layout.tableLeft<layout.containerLeft-2||layout.tableRight>layout.containerRight+2||layout.bad.length||layout.collisions.length)
                   throw Error(engineName+': diacritics container overflow/collision at '+width+'px: '+JSON.stringify(layout));
               }
+              // Regression: long example must not create a tall, mostly empty row.
+              await page.locator('#languageSelect').selectOption('en');
+              const raised=await page.locator('.dia-item:has(> .key[data-sym="̝"])').evaluate(item=>{
+                const row=item.closest('tr'), cell=item.closest('td'), example=item.querySelector('.dia-ex');
+                const r=row.getBoundingClientRect(),cr=cell.getBoundingClientRect(),er=example.getBoundingClientRect();
+                return {rowHeight:r.height,cellWidth:cr.width,exampleHeight:er.height,
+                  clipped:example.scrollWidth>example.clientWidth+2};
+              });
+              console.log('DIACRITICS RAISED METRICS',engineName,JSON.stringify(raised));
+              if(raised.rowHeight>72||raised.clipped)throw Error(engineName+': excessive vertical whitespace / clipped Raised example '+JSON.stringify(raised));
               await page.setViewportSize({width:390,height:844});
               for(const [lang,term] of [['pt-BR','fricativa alveolar vozeada'],['fa','سایشی لثوی واکدار'],['ja','有声歯茎摩擦音'],['ja-osaka','有声歯茎摩擦音']]){
                 await page.locator('#languageSelect').selectOption(lang);
