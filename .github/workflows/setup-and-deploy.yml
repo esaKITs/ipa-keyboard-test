@@ -1,0 +1,76 @@
+name: Populate and deploy isolated IPA Keyboard test
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/setup-and-deploy.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: ipa-keyboard-test-setup
+  cancel-in-progress: false
+jobs:
+  setup-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out the separate test repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Fetch read-only source repository at verified main commit
+        run: |
+          git clone https://github.com/esaKITs/ipa-keyboard.git /tmp/ipa-source
+          git -C /tmp/ipa-source checkout 1806012fc168040676af61c297d97dfbfac96f28
+      - name: Copy original site into test repository without touching source
+        run: |
+          rsync -a --exclude='.git' --exclude='.github' /tmp/ipa-source/ ./
+      - name: Apply exactly two translation edits to the two site entry pages
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for page in (Path('index.html'), Path('preview/index.html')):
+              old=page.read_text(encoding='utf-8')
+              pairs=[
+                  ('"en":"ɹ̝ = voiced alveolar fricative"', '"en":"e̝ (ɹ̝ = voiced alveolar fricative)"'),
+                  ('"en":"β̞ = voiced bilabial approximant"', '"en":"e̞ (β̞ = voiced bilabial approximant)"')
+              ]
+              new=old
+              for a,b in pairs:
+                  assert new.count(a)==1, (page,a,new.count(a))
+                  new=new.replace(a,b)
+              check=new
+              for a,b in reversed(pairs):
+                  assert check.count(b)==1,(page,b)
+                  check=check.replace(b,a)
+              assert check==old, f'Unintended edits to {page}'
+              page.write_text(new,encoding='utf-8')
+              print(f'{page}: verified ONLY 2 specified translations')
+          PY
+      - name: Commit populated test files to independent repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Import IPA Keyboard baseline with only two corrected IPA translations"
+            git push origin HEAD:main
+          fi
+          echo "COMMIT_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Prepare site for Pages
+        run: |
+          mkdir -p /tmp/ipa-test-site
+          rsync -a --exclude='.git' --exclude='.github' ./ /tmp/ipa-test-site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/ipa-test-site
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Show deployed commit
+        run: echo "Deployed test repository commit $COMMIT_SHA"
