@@ -38,7 +38,8 @@ jobs:
               for(const width of [390,540,1140]){
                 await page.setViewportSize({width,height:844});
                 const layout=await page.locator('.diac').evaluate(table=>{
-                  const tableRect=table.getBoundingClientRect();
+                  const box=table.parentElement.getBoundingClientRect();
+                  const rect=table.getBoundingClientRect();
                   const cells=[...table.querySelectorAll('td')];
                   const bad=cells.flatMap((cell,i)=>{
                     const r=cell.getBoundingClientRect();
@@ -48,9 +49,23 @@ jobs:
                       return (p.left<r.left-2||p.right>r.right+2||part.scrollWidth>part.clientWidth+2)?[i+': '+part.textContent.trim().slice(0,30)]:[];
                     });
                   });
-                  return {tableLeft:tableRect.left,tableRight:tableRect.right,viewport:document.documentElement.clientWidth,bad:bad.slice(0,12)};
+                  const items=[...table.querySelectorAll('.dia-item')];
+                  const collisions=items.flatMap((item,i)=>{
+                    const parts=[...item.querySelectorAll(':scope > .key, :scope > span')];
+                    for(let a=0;a<parts.length;a++)for(let b=a+1;b<parts.length;b++){
+                      const x=parts[a].getBoundingClientRect(),y=parts[b].getBoundingClientRect();
+                      if(Math.min(x.right,y.right)-Math.max(x.left,y.left)>2&&Math.min(x.bottom,y.bottom)-Math.max(x.top,y.top)>2)return [i];
+                    }
+                    return [];
+                  });
+                  return {tableLeft:rect.left,tableRight:rect.right,containerLeft:box.left,containerRight:box.right,
+                    documentScrollWidth:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth,
+                    bad:bad.slice(0,12),collisions:collisions.slice(0,12)};
                 });
-                if(layout.tableLeft< -2||layout.tableRight>width+2||layout.bad.length)throw Error(engineName+': diacritics layout overflow at '+width+'px: '+JSON.stringify(layout));
+                // The full 1160px IPA chart intentionally scrolls inside .sheet-scroll.
+                // Diacritics must fit their 560px parent column, not the device viewport.
+                if(layout.tableLeft<layout.containerLeft-2||layout.tableRight>layout.containerRight+2||layout.bad.length||layout.collisions.length)
+                  throw Error(engineName+': diacritics container overflow/collision at '+width+'px: '+JSON.stringify(layout));
               }
               await page.setViewportSize({width:390,height:844});
               for(const [lang,term] of [['pt-BR','fricativa alveolar vozeada'],['fa','سایشی لثوی واکدار'],['ja','有声歯茎摩擦音'],['ja-osaka','有声歯茎摩擦音']]){
