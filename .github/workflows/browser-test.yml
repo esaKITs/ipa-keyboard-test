@@ -32,9 +32,27 @@ jobs:
               await page.goto('http://127.0.0.1:8765/',{waitUntil:'load'});
               await page.locator('#languageSelect').selectOption('en');
               const phrases=await page.locator('.dia-ex').allTextContents();
-              for(const target of ['e̝ (ɹ̝ = voiced alveolar fricative)','e̞ (β̞ = voiced bilabial approximant)']){
-                if(!phrases.some(x=>x.trim()===target))throw Error(engineName+': missing translated example '+target+'; observed '+phrases.filter(x=>x.includes('ɹ̝')||x.includes('β̞')).join('; '));
+              for(const [symbol,translation] of [['ɹ̝','voiced alveolar fricative'],['β̞','voiced bilabial approximant']]){
+                if(!phrases.some(x=>x.includes(symbol)&&x.includes(translation)))throw Error(engineName+': missing '+symbol+' '+translation+'; observed '+phrases.filter(x=>x.includes(symbol)).join('; '));
               }
+              for(const width of [390,540,1140]){
+                await page.setViewportSize({width,height:844});
+                const layout=await page.locator('.diac').evaluate(table=>{
+                  const tableRect=table.getBoundingClientRect();
+                  const cells=[...table.querySelectorAll('td')];
+                  const bad=cells.flatMap((cell,i)=>{
+                    const r=cell.getBoundingClientRect();
+                    const parts=[...cell.querySelectorAll('.key,.dia-ex,.dia-item > span:not(.dia-ex)')];
+                    return parts.flatMap(part=>{
+                      const p=part.getBoundingClientRect();
+                      return (p.left<r.left-2||p.right>r.right+2||part.scrollWidth>part.clientWidth+2)?[i+': '+part.textContent.trim().slice(0,30)]:[];
+                    });
+                  });
+                  return {tableLeft:tableRect.left,tableRight:tableRect.right,viewport:document.documentElement.clientWidth,bad:bad.slice(0,12)};
+                });
+                if(layout.tableLeft< -2||layout.tableRight>width+2||layout.bad.length)throw Error(engineName+': diacritics layout overflow at '+width+'px: '+JSON.stringify(layout));
+              }
+              await page.setViewportSize({width:390,height:844});
               for(const [lang,term] of [['pt-BR','fricativa alveolar vozeada'],['fa','سایشی لثوی واکدار'],['ja','有声歯茎摩擦音'],['ja-osaka','有声歯茎摩擦音']]){
                 await page.locator('#languageSelect').selectOption(lang);
                 const values=await page.locator('.dia-ex').allTextContents();
