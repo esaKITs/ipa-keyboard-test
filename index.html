@@ -244,6 +244,19 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   grid-template-columns:28px minmax(80px,105px) minmax(0,1fr);
   column-gap:5px;
 }
+/* v82.2: compact vertical spacing; retain existing three-column geometry. */
+.diac-scroll .diac td {padding:1px 3px;height:auto;min-height:0}
+.diac-scroll .dia-item,
+.diac-scroll .dia-item.tight-ex {min-height:42px;row-gap:0}
+.diac-scroll .dia-item > span:not(.dia-ex) {line-height:1.18}
+.diac-scroll .dia-item > .dia-ex {line-height:1.08;padding-top:0;padding-bottom:0}
+/* Rhoticity has two short examples: keep them on one line instead of doubling row height. */
+.diac-scroll .dia-item:has(> .key[data-sym="˞"]) {
+  grid-template-columns:28px minmax(0,1fr) 72px;
+}
+.diac-scroll .dia-item:has(> .key[data-sym="˞"]) > .dia-ex {
+  white-space:nowrap;font-size:16px;
+}
 .is-persian .diac-scroll .dia-item {direction:ltr}
 .is-persian .diac-scroll .dia-item > span:not(.dia-ex) {direction:rtl;text-align:right}
 </style></head><body><main class="app"><header class="app-header"><div class="ipa-standard">IPA Chart 2026 日本語版準拠</div><h1 class="title"><span>IPA Keyboard</span></h1><select class="version-ja language-select" id="languageSelect" aria-label="言語選択"><option value="ja" selected>日本語</option><option value="en">English</option><option value="pt-BR">Português brasileiro</option><option value="fa" lang="fa" dir="rtl">فارسی</option><option value="ja-osaka">大阪方言</option></select></header><div class="toolbar"><textarea id="out" class="output ipa" aria-label="IPA入力欄" spellcheck="false" style="height: 97px;"></textarea><div class="controls main-controls">
