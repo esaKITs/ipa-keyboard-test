@@ -215,30 +215,60 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .is-persian .app-header .ipa-standard{font-size:12px;}
 .is-persian .ctl{font-size:15px;}
 
-/* v80 test: consistent diacritics columns without narrow forced wrapping.
-   Keep the IPA table's 3-column structure; scroll only its own section. */
-.diac-scroll {max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;-webkit-overflow-scrolling:touch}
-.diac-scroll .diac {width:max-content;min-width:100%;table-layout:auto;border-collapse:collapse}
-.diac-scroll .diac td {overflow:visible;vertical-align:middle;overflow-wrap:normal}
+/* v81: responsive diacritics. Never force a table wider than the viewport. */
+.diac-scroll {width:100%;max-width:100%;overflow-x:visible}
+.diac-scroll .diac {width:100%;min-width:0;table-layout:fixed;border-collapse:collapse}
+.diac-scroll .diac td {box-sizing:border-box;overflow:visible;vertical-align:middle;overflow-wrap:normal}
 .diac-scroll .dia-item,
 .diac-scroll .dia-item.tight-ex,
 .diac-scroll td[colspan="2"] .dia-item.tight-ex {
- display:grid;grid-template-columns:28px 130px 190px;
- column-gap:6px;align-items:center;min-width:0;height:auto;
+  display:grid;grid-template-columns:28px minmax(0,1fr) minmax(0,1fr);
+  column-gap:5px;align-items:center;min-width:0;min-height:40px;height:auto;
 }
 .diac-scroll .dia-item > .key {grid-column:1;width:28px;min-width:0;max-width:28px;margin:0}
 .diac-scroll .dia-item > span:not(.dia-ex) {
- grid-column:2;min-width:0;white-space:normal;word-break:normal;
- overflow-wrap:normal;line-height:1.3;
+  grid-column:2;min-width:0;white-space:normal;word-break:normal;
+  overflow-wrap:break-word;line-height:1.3;
 }
 .diac-scroll .dia-item > .dia-ex,
 .diac-scroll .dia-item.tight-ex > .dia-ex {
- grid-column:3;width:auto;min-width:0;max-width:none;margin:0;
- white-space:normal;word-break:normal;overflow-wrap:normal;
- text-align:left;line-height:1.3;
+  grid-column:3;width:auto;min-width:0;max-width:100%;margin:0;
+  white-space:normal;word-break:normal;overflow-wrap:break-word;
+  text-align:left;line-height:1.3;
 }
 .is-persian .diac-scroll .dia-item {direction:ltr}
 .is-persian .diac-scroll .dia-item > span:not(.dia-ex) {direction:rtl;text-align:right}
+/* Screen-space responsive cards: no horizontal scroll and no empty fixed columns. */
+@media(max-width:800px) {
+  .diac-scroll .diac {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));table-layout:auto;gap:0}
+  .diac-scroll .diac tbody,
+  .diac-scroll .diac tr {display:contents}
+  .diac-scroll .diac td,
+  .diac-scroll .diac td[colspan] {display:block;min-width:0;width:auto;height:auto;min-height:0;padding:5px;border:1px solid var(--line)}
+  .diac-scroll .dia-item,
+  .diac-scroll .dia-item.tight-ex,
+  .diac-scroll td[colspan="2"] .dia-item.tight-ex {
+    grid-template-columns:28px minmax(0,1fr);
+    column-gap:7px;row-gap:2px;min-height:47px;align-content:center;
+  }
+  .diac-scroll .dia-item > span:not(.dia-ex) {grid-column:2;grid-row:1}
+  .diac-scroll .dia-item > .key {grid-row:1 / span 2;align-self:center}
+  .diac-scroll .dia-item > .dia-ex,
+  .diac-scroll .dia-item.tight-ex > .dia-ex {grid-column:2;grid-row:2}
+}
+@media(max-width:480px) {
+  .diac-scroll .diac {grid-template-columns:minmax(0,1fr)}
+  .diac-scroll .dia-item,
+  .diac-scroll .dia-item.tight-ex,
+  .diac-scroll td[colspan="2"] .dia-item.tight-ex {
+    grid-template-columns:30px minmax(0,1fr) minmax(0,1fr);
+    column-gap:8px;min-height:39px;
+  }
+  .diac-scroll .dia-item > .key {grid-column:1;grid-row:1}
+  .diac-scroll .dia-item > span:not(.dia-ex) {grid-column:2;grid-row:1}
+  .diac-scroll .dia-item > .dia-ex,
+  .diac-scroll .dia-item.tight-ex > .dia-ex {grid-column:3;grid-row:1}
+}
 </style></head><body><main class="app"><header class="app-header"><div class="ipa-standard">IPA Chart 2026 日本語版準拠</div><h1 class="title"><span>IPA Keyboard</span></h1><select class="version-ja language-select" id="languageSelect" aria-label="言語選択"><option value="ja" selected>日本語</option><option value="en">English</option><option value="pt-BR">Português brasileiro</option><option value="fa" lang="fa" dir="rtl">فارسی</option><option value="ja-osaka">大阪方言</option></select></header><div class="toolbar"><textarea id="out" class="output ipa" aria-label="IPA入力欄" spellcheck="false" style="height: 97px;"></textarea><div class="controls main-controls">
 <button class="ctl bracket-btn" id="phonetic" title="角括弧を付ける" aria-label="角括弧を付ける">[ ]</button>
 <button class="ctl icon-btn" id="copy" title="コピー" aria-label="コピー"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="1.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-10A1.5 1.5 0 0 0 3 5.5v10A1.5 1.5 0 0 0 4.5 17H8"/></svg></button>
