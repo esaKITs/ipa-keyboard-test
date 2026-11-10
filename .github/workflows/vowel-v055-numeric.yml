@@ -1,0 +1,20 @@
+name: IPA vowel v0.2.55 numerical verification
+on:
+  push:
+    paths:
+      - 'vowel-release-v0.2.55/**'
+      - 'tests/vowel-v055-numeric.cjs'
+      - '.github/workflows/vowel-v055-numeric.yml'
+  workflow_dispatch:
+jobs:
+  numeric:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/vowel-v055-numeric.cjs
