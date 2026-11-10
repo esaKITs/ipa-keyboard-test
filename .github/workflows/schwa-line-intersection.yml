@@ -1,0 +1,19 @@
+name: Schwa diagonal coordinate calculation
+on:
+  push:
+    paths:
+      - 'tests/schwa-line-intersection.cjs'
+      - '.github/workflows/schwa-line-intersection.yml'
+  workflow_dispatch:
+jobs:
+  calculate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/schwa-line-intersection.cjs
