@@ -1,0 +1,19 @@
+name: IPA independent exact mask clipping verification
+on:
+  push:
+    paths:
+      - 'tests/v055-independent-mask-intervals.cjs'
+      - '.github/workflows/v055-independent-mask-intervals.yml'
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/v055-independent-mask-intervals.cjs
