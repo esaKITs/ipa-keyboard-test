@@ -1,0 +1,26 @@
+name: IPA vowel diagram render audit
+on:
+  push:
+    paths:
+      - 'weston-chart-v0.2.49.html'
+      - 'tests/vowel-render-audit.cjs'
+      - '.github/workflows/vowel-render-audit.yml'
+  workflow_dispatch:
+jobs:
+  render-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - name: Screenshot and geometry audit
+        run: node tests/vowel-render-audit.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vowel-render-audit-v049
+          path: audit-output/
