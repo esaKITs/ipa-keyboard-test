@@ -1,0 +1,25 @@
+name: IPA vowel v0.2.54 all-lines audit
+on:
+  push:
+    paths:
+      - 'tests/vowel-v054-all-lines.cjs'
+      - 'vowel-release-v0.2.54/**'
+      - '.github/workflows/vowel-v054-all-lines.yml'
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/vowel-v054-all-lines.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v054-all-lines-evidence
+          path: audit-output/v054-lines/
