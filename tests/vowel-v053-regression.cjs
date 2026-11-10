@@ -25,7 +25,7 @@ const fs=require('node:fs'), path=require('node:path');
     const rows=expected.map(v=>{
      const p=svg.querySelector('[data-official-drawing="'+v.drawing+'"]');
      const d=p?.getAttribute('d')||'';
-     const seg=[...d.matchAll(/M\\s*([-\\d.]+)\\s+([-\\d.]+)\\s+L\\s*([-\\d.]+)\\s+([-\\d.]+)/g)].map(m=>m.slice(1).map(Number));
+     const seg=[...d.matchAll(/M\s*([-\d.]+)\s+([-\d.]+)\s+L\s*([-\d.]+)\s+([-\d.]+)/g)].map(m=>m.slice(1).map(Number));
      const crossesGap=seg.some(([x0,y0,x1,y1])=>Math.abs(y0-v.y)<.01&&Math.abs(y1-v.y)<.01&&Math.min(x0,x1)<v.dot&&Math.max(x0,x1)>v.dot);
      const entersGap=seg.some(([x0,y0,x1,y1])=>Math.abs(y0-v.y)<.01&&Math.abs(y1-v.y)<.01&&Math.min(x0,x1)<v.hi-.01&&Math.max(x0,x1)>v.lo+.01);
      return {drawing:v.drawing,d,segments:seg.length,crossesGap,entersGap};
