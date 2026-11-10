@@ -2,7 +2,7 @@ name: IPA vowel diagram render audit
 on:
   push:
     paths:
-      - 'weston-chart-v0.2.49.html'
+      - 'weston-chart-v0.2.50.html'
       - 'tests/vowel-render-audit.cjs'
       - '.github/workflows/vowel-render-audit.yml'
   workflow_dispatch:
@@ -22,5 +22,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: vowel-render-audit-v049
+          name: vowel-render-audit-v050
           path: audit-output/
