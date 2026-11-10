@@ -1,0 +1,32 @@
+name: IPA all 28 glyph outline by 7 line mathematical intersections
+on:
+  push:
+    paths:
+      - 'tests/ipa-ink-metrics.cjs'
+      - 'tests/ipa-ink-intersections.py'
+      - '.github/workflows/ipa-ink-intersections.yml'
+  workflow_dispatch:
+jobs:
+  calculate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - run: python -m pip install fonttools brotli shapely
+      - name: Read 28 browser text placements and 7 paths
+        run: node tests/ipa-ink-metrics.cjs
+      - name: Compute 196 exact outline-line pair intersections per size
+        run: python tests/ipa-ink-intersections.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ipa-all-ink-intersections
+          path: audit-output/ink-intersections/
