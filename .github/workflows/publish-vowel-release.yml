@@ -1,0 +1,32 @@
+name: Publish isolated IPA vowel release v0.2.51
+on:
+  push:
+    paths:
+      - 'vowel-release-v0.2.51/**'
+      - '.github/workflows/publish-vowel-release.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-vowel-release
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.51/
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Preserve all existing test pages while adding the new release
+        run: |
+          mkdir -p public
+          rsync -a --exclude=.git --exclude=.github --exclude=public ./ public/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - id: deployment
+        uses: actions/deploy-pages@v4
