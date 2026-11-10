@@ -21,7 +21,7 @@ const path = require('node:path');
    const glyphBoxes=glyphs.map(g=>g.getBBox());
    const segments=rules.flatMap(rule=>{
     const d=rule.getAttribute('d');
-    const matches=[...d.matchAll(/M([-\\d.]+) ([-\\d.]+) L([-\\d.]+) ([-\\d.]+)/g)];
+    const matches=[...d.matchAll(/M([-\d.]+) ([-\d.]+) L([-\d.]+) ([-\d.]+)/g)];
     return matches.map(m=>m.slice(1).map(Number));
    });
    const overlaps=segments.filter(([x0,y0,x1,y1])=>{
