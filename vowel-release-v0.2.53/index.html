@@ -1722,7 +1722,7 @@ for(const group of svg.querySelectorAll(".vowel-lines,.vowel-diagonals"))group.r
 const segments=rules.flatMap(rule=>{
  const original=rule.getAttribute("d");
  // Preserve every fixed, semantic interruption from the approved v0.2.44.
- const pairs=[...original.matchAll(/[ML]\\s*([-\\d.]+)\\s+([-\\d.]+)/g)].map(m=>[+m[1],+m[2]]);
+ const pairs=[...original.matchAll(/[ML]\s*([-\d.]+)\s+([-\d.]+)/g)].map(m=>[+m[1],+m[2]]);
  if(pairs.length<2||pairs.length%2)throw Error("Unexpected vowel rule: "+original);
  return Array.from({length:pairs.length/2},(_,i)=>({rule,points:[...pairs[2*i],...pairs[2*i+1]]}));
 });
