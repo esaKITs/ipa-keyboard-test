@@ -1,0 +1,19 @@
+name: Numeric visible break intervals for all vowel lines
+on:
+  push:
+    paths:
+      - 'tests/v055-mask-gaps-numeric.cjs'
+      - '.github/workflows/v055-mask-gaps-numeric.yml'
+  workflow_dispatch:
+jobs:
+  calculate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/v055-mask-gaps-numeric.cjs
