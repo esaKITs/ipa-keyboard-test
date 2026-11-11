@@ -1,0 +1,31 @@
+name: IPA v0.2.59 continuous-axis validation
+on:
+  push:
+    paths:
+      - 'vowel-release-v0.2.59/**'
+      - 'tests/verify-vowel-v059.cjs'
+      - 'tests/verify-vowel-v059-shapes.py'
+      - '.github/workflows/verify-vowel-v059.yml'
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install shapely
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium webkit
+      - run: node tests/verify-vowel-v059.cjs
+      - run: python tests/verify-vowel-v059-shapes.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ipa-v059-render-and-coordinate-audit
+          path: audit-output/v059/
