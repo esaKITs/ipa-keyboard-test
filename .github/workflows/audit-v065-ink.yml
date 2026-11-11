@@ -1,0 +1,28 @@
+name: Audit actual ink bounds v0.2.65
+on:
+  push:
+    branches: ['work/vowel-v060-20261111']
+    paths:
+      - 'tests/verify-v065-ink.cjs'
+      - '.github/workflows/audit-v065-ink.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright pngjs
+      - run: npx playwright install chromium --only-shell
+      - name: Inspect rasterized click glyph ink and table bottom
+        run: node tests/verify-v065-ink.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v065-ink-inspection
+          path: audit-output/v065-ink/
