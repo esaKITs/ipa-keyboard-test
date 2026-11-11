@@ -1,0 +1,59 @@
+name: Verify and publish isolated vowel v0.2.60
+on:
+  push:
+    branches: ['work/vowel-v060-20261111']
+    paths:
+      - 'vowel-release-v0.2.60/**'
+      - '.github/workflows/vowel-v060.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-vowel-v060
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm install --no-save playwright
+      - run: python -m pip install shapely pillow
+      - run: npx playwright install --with-deps chromium webkit
+      - run: node vowel-release-v0.2.60/verify.cjs chromium
+      - run: node vowel-release-v0.2.60/verify.cjs webkit
+      - run: python vowel-release-v0.2.60/verify_geometry.py
+      - run: python vowel-release-v0.2.60/verify_24.py
+      - run: node vowel-release-v0.2.60/regression.cjs
+      - name: Ensure every pre-existing file remains unchanged
+        run: |
+          git diff --exit-code 74c8cd4b23348d6791d9630bd54948fa5d629a97 HEAD -- . ':!vowel-release-v0.2.60' ':!.github/workflows/vowel-v060.yml'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vowel-v060-browser-and-geometry-evidence
+          path: audit-output/v060/
+      - name: Assemble full preserved test site with new independent path
+        run: |
+          mkdir -p /tmp/v060-site
+          rsync -a --exclude=.git --exclude=.github --exclude=node_modules --exclude=audit-output ./ /tmp/v060-site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/v060-site
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.60/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

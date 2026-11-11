@@ -1,0 +1,51 @@
+[
+  {
+    "official_drawing": 97,
+    "collinearity_error_svg": 0.00012965775359751738,
+    "outer_endpoint_error_svg": 0.00013429362004333632,
+    "source": "M143.153 26.843 L300.698 260.539",
+    "intentional_node_gap_retained": false
+  },
+  {
+    "official_drawing": 40,
+    "collinearity_error_svg": 5.807839992656894e-05,
+    "outer_endpoint_error_svg": 0.00025381119639767276,
+    "source": "M296.833 26.833 L375.183 260.539",
+    "intentional_node_gap_retained": false
+  },
+  {
+    "official_drawing": 36,
+    "collinearity_error_svg": 0.0002688577726530639,
+    "outer_endpoint_error_svg": 0.0005280860666392969,
+    "source": "M437.837 103.833 L335.843 103.833 M309.443 103.833 L207.866 103.833",
+    "intentional_node_gap_retained": true
+  },
+  {
+    "official_drawing": 37,
+    "collinearity_error_svg": 1.0295864740328398e-05,
+    "outer_endpoint_error_svg": 0.00045463875406013133,
+    "source": "M437.837 26.839 L310.000 26.839 M283.600 26.839 L155.960 26.839",
+    "intentional_node_gap_retained": true
+  },
+  {
+    "official_drawing": 38,
+    "collinearity_error_svg": 2.2436867709529906e-05,
+    "outer_endpoint_error_svg": 0.00027852361197651463,
+    "source": "M312.430 260.540 L437.838 260.540",
+    "intentional_node_gap_retained": false
+  },
+  {
+    "official_drawing": 39,
+    "collinearity_error_svg": 6.252818192820087e-05,
+    "outer_endpoint_error_svg": 0.00045880297012753046,
+    "source": "M437.837 180.754 L361.649 180.754 M335.249 180.754 L259.720 180.754",
+    "intentional_node_gap_retained": true
+  },
+  {
+    "official_drawing": 98,
+    "collinearity_error_svg": 0.0002297353289009152,
+    "outer_endpoint_error_svg": 0.0002498833305019893,
+    "source": "M450.652 260.540 L450.652 26.844",
+    "intentional_node_gap_retained": false
+  }
+]

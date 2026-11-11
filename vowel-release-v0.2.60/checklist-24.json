@@ -1,0 +1,386 @@
+[
+  {
+    "id": "01.1",
+    "original_file": "IMG_2962(1).jpeg",
+    "loupe": 1,
+    "classification": "D",
+    "label": "i–y・e付近",
+    "rule": "front",
+    "glyph": null,
+    "location": "continuous",
+    "crop_svg": [
+      152,
+      58,
+      208,
+      108
+    ]
+  },
+  {
+    "id": "02.1",
+    "original_file": "IMG_2966(1).jpeg",
+    "loupe": 1,
+    "classification": "A",
+    "label": "ɨ",
+    "rule": "37",
+    "glyph": "ɨ",
+    "location": "left",
+    "crop_svg": [
+      247.2070074081421,
+      1.8399999999999999,
+      303.2070074081421,
+      51.84
+    ]
+  },
+  {
+    "id": "02.2",
+    "original_file": "IMG_2966(1).jpeg",
+    "loupe": 2,
+    "classification": "A",
+    "label": "ʉ",
+    "rule": "37",
+    "glyph": "ʉ",
+    "location": "right",
+    "crop_svg": [
+      296.1279926300049,
+      1.8399999999999999,
+      352.1279926300049,
+      51.84
+    ]
+  },
+  {
+    "id": "03.1",
+    "original_file": "IMG_2969(1).jpeg",
+    "loupe": 1,
+    "classification": "A",
+    "label": "ɯ",
+    "rule": "37",
+    "glyph": "ɯ",
+    "location": "left",
+    "crop_svg": [
+      394.8640012741089,
+      1.8399999999999999,
+      450.8640012741089,
+      51.84
+    ]
+  },
+  {
+    "id": "03.2",
+    "original_file": "IMG_2969(1).jpeg",
+    "loupe": 2,
+    "classification": "C",
+    "label": "ɯ",
+    "rule": "37",
+    "glyph": "ɯ",
+    "location": "inside-left",
+    "crop_svg": [
+      402.8640012741089,
+      1.8399999999999999,
+      458.8640012741089,
+      51.84
+    ]
+  },
+  {
+    "id": "03.3",
+    "original_file": "IMG_2969(1).jpeg",
+    "loupe": 3,
+    "classification": "C",
+    "label": "ɯ",
+    "rule": "37",
+    "glyph": "ɯ",
+    "location": "inside-right",
+    "crop_svg": [
+      402.8640012741089,
+      1.8399999999999999,
+      458.8640012741089,
+      51.84
+    ]
+  },
+  {
+    "id": "04.1",
+    "original_file": "IMG_2963(1).jpeg",
+    "loupe": 1,
+    "classification": "D",
+    "label": "e–ø",
+    "rule": "front",
+    "glyph": null,
+    "location": "continuous",
+    "crop_svg": [
+      202,
+      132,
+      258,
+      182
+    ]
+  },
+  {
+    "id": "05.1",
+    "original_file": "IMG_2965(1).jpeg",
+    "loupe": 1,
+    "classification": "A",
+    "label": "ɘ",
+    "rule": "36",
+    "glyph": "ɘ",
+    "location": "left",
+    "crop_svg": [
+      270.64198875427246,
+      78.83,
+      326.64198875427246,
+      128.82999999999998
+    ]
+  },
+  {
+    "id": "05.2",
+    "original_file": "IMG_2965(1).jpeg",
+    "loupe": 2,
+    "classification": "A",
+    "label": "ɵ",
+    "rule": "36",
+    "glyph": "ɵ",
+    "location": "right",
+    "crop_svg": [
+      321.826997756958,
+      78.83,
+      377.826997756958,
+      128.82999999999998
+    ]
+  },
+  {
+    "id": "06.1",
+    "original_file": "IMG_2970(1).jpeg",
+    "loupe": 1,
+    "classification": "A",
+    "label": "ɤ",
+    "rule": "36",
+    "glyph": "ɤ",
+    "location": "left",
+    "crop_svg": [
+      397.1570053100586,
+      78.83,
+      453.1570053100586,
+      128.82999999999998
+    ]
+  },
+  {
+    "id": "06.2",
+    "original_file": "IMG_2970(1).jpeg",
+    "loupe": 2,
+    "classification": "C",
+    "label": "ɤ",
+    "rule": "36",
+    "glyph": "ɤ",
+    "location": "inside-left",
+    "crop_svg": [
+      405.1570053100586,
+      78.83,
+      461.1570053100586,
+      128.82999999999998
+    ]
+  },
+  {
+    "id": "06.3",
+    "original_file": "IMG_2970(1).jpeg",
+    "loupe": 3,
+    "classification": "C",
+    "label": "ɤ",
+    "rule": "36",
+    "glyph": "ɤ",
+    "location": "inside-right",
+    "crop_svg": [
+      405.1570053100586,
+      78.83,
+      461.1570053100586,
+      128.82999999999998
+    ]
+  },
+  {
+    "id": "07.1",
+    "original_file": "IMG_2967(1).jpeg",
+    "loupe": 1,
+    "classification": "B",
+    "label": "ə",
+    "rule": "40",
+    "glyph": "ə",
+    "location": "above",
+    "crop_svg": [
+      308.02101707458496,
+      101.13087463378906,
+      364.02101707458496,
+      151.13087463378906
+    ]
+  },
+  {
+    "id": "07.2",
+    "original_file": "IMG_2967(1).jpeg",
+    "loupe": 2,
+    "classification": "C",
+    "label": "ə",
+    "rule": "40",
+    "glyph": "ə",
+    "location": "inside",
+    "crop_svg": [
+      308.02101707458496,
+      113.13087463378906,
+      364.02101707458496,
+      163.13087463378906
+    ]
+  },
+  {
+    "id": "07.3",
+    "original_file": "IMG_2967(1).jpeg",
+    "loupe": 3,
+    "classification": "A",
+    "label": "ə",
+    "rule": "40",
+    "glyph": "ə",
+    "location": "below",
+    "crop_svg": [
+      308.02101707458496,
+      125.13087463378906,
+      364.02101707458496,
+      175.13087463378906
+    ]
+  },
+  {
+    "id": "08.1",
+    "original_file": "IMG_2973.jpeg",
+    "loupe": 1,
+    "classification": "A",
+    "label": "ɜ",
+    "rule": "39",
+    "glyph": "ɜ",
+    "location": "left",
+    "crop_svg": [
+      297.6289973258972,
+      155.75,
+      353.6289973258972,
+      205.75
+    ]
+  },
+  {
+    "id": "08.2",
+    "original_file": "IMG_2973.jpeg",
+    "loupe": 2,
+    "classification": "A",
+    "label": "ɞ",
+    "rule": "39",
+    "glyph": "ɞ",
+    "location": "right",
+    "crop_svg": [
+      346.9209804534912,
+      155.75,
+      402.9209804534912,
+      205.75
+    ]
+  },
+  {
+    "id": "09.1",
+    "original_file": "IMG_2971(1).jpeg",
+    "loupe": 1,
+    "classification": "A",
+    "label": "ʌ",
+    "rule": "39",
+    "glyph": "ʌ",
+    "location": "left",
+    "crop_svg": [
+      399.4190082550049,
+      155.75,
+      455.4190082550049,
+      205.75
+    ]
+  },
+  {
+    "id": "10.1",
+    "original_file": "IMG_2968(1).jpeg",
+    "loupe": 1,
+    "classification": "B",
+    "label": "ɐ",
+    "rule": "40",
+    "glyph": "ɐ",
+    "location": "above",
+    "crop_svg": [
+      334.2889919281006,
+      178.48887634277344,
+      390.2889919281006,
+      228.48887634277344
+    ]
+  },
+  {
+    "id": "10.2",
+    "original_file": "IMG_2968(1).jpeg",
+    "loupe": 2,
+    "classification": "C",
+    "label": "ɐ",
+    "rule": "40",
+    "glyph": "ɐ",
+    "location": "inside",
+    "crop_svg": [
+      334.2889919281006,
+      190.48887634277344,
+      390.2889919281006,
+      240.48887634277344
+    ]
+  },
+  {
+    "id": "10.3",
+    "original_file": "IMG_2968(1).jpeg",
+    "loupe": 3,
+    "classification": "A",
+    "label": "ɐ",
+    "rule": "40",
+    "glyph": "ɐ",
+    "location": "below",
+    "crop_svg": [
+      334.2889919281006,
+      202.48887634277344,
+      390.2889919281006,
+      252.48887634277344
+    ]
+  },
+  {
+    "id": "11.1",
+    "original_file": "IMG_2964(1).jpeg",
+    "loupe": 1,
+    "classification": "C",
+    "label": "ɶ",
+    "rule": "38",
+    "glyph": "ɶ",
+    "location": "inside",
+    "crop_svg": [
+      293.9019842147827,
+      235.54000000000002,
+      349.9019842147827,
+      285.54
+    ]
+  },
+  {
+    "id": "12.1",
+    "original_file": "IMG_2972.jpeg",
+    "loupe": 1,
+    "classification": "A",
+    "label": "ɑ",
+    "rule": "38",
+    "glyph": "ɑ",
+    "location": "left",
+    "crop_svg": [
+      397.40200996398926,
+      235.54000000000002,
+      453.40200996398926,
+      285.54
+    ]
+  },
+  {
+    "id": "12.2",
+    "original_file": "IMG_2972.jpeg",
+    "loupe": 2,
+    "classification": "C",
+    "label": "ɑ",
+    "rule": "38",
+    "glyph": "ɑ",
+    "location": "inside",
+    "crop_svg": [
+      405.40200996398926,
+      235.54000000000002,
+      461.40200996398926,
+      285.54
+    ]
+  }
+]
