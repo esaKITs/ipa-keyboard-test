@@ -24,7 +24,7 @@ assert.equal(candidate,base.replaceAll('v0.2.63','v0.2.64').replace('#chart #non
    assert.equal(data.rows.length,5);assert(data.fontLoaded,'IPA font missing');assert.equal(errors.length,0,errors.join(';'));
    const glyphs=['ʘ','ǀ','ǃ','ǂ','ǁ'];for(let i=0;i<5;i++)assert.equal(data.rows[i].cells[0].text,glyphs[i]);
    if(version==='64'){
-    for(let i=0;i<5;i++){const [glyph,label]=data.rows[i].cells;assert.equal(glyph.paddingTop,'6px');assert.equal(glyph.paddingBottom,'7px');assert.equal(label.paddingTop,'6px');assert.equal(label.paddingBottom,'7px');assert(glyph.rect.height>20,'Click row too short');}
+    for(let i=0;i<5;i++){const [glyph,label]=data.rows[i].cells;assert.equal(glyph.paddingTop,'6px');assert.equal(glyph.paddingBottom,'7px');assert.equal(label.paddingTop,'6px');assert.equal(label.paddingBottom,'7px');assert(glyph.rect.height/data.scale>20,'Click row too short');}
     const last=data.rows[4].cells[0];assert(last.rect.bottom<=data.table.bottom+0.25,'Last click cell overflows table');
    }
    await page.locator('#nonPulmonicConsonants').screenshot({path:`${out}/v0.2.${version}-${width}.png`,timeout:12000,animations:'disabled'});
