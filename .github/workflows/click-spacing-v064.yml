@@ -1,0 +1,65 @@
+name: Verify and publish click spacing v0.2.64
+on:
+  push:
+    branches: ['work/vowel-v060-20261111']
+    paths:
+      - 'vowel-release-v0.2.64/**'
+      - '.github/workflows/click-spacing-v064.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-click-spacing-v064
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --only-shell
+      - name: Verify five click rows and bottom clearance, at desktop and mobile widths
+        run: node vowel-release-v0.2.64/verify.cjs
+      - name: Preserve previous release contents
+        run: git diff --exit-code HEAD^ HEAD -- vowel-release-v0.2.63/index.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clicks-v064-inspection
+          path: audit-output/v064/
+      - name: Package site without modifying earlier versions
+        run: |
+          mkdir -p /tmp/ipa-v064-site
+          rsync -a --exclude=.git --exclude=.github --exclude=node_modules --exclude=audit-output ./ /tmp/ipa-v064-site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/ipa-v064-site
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.64/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify published page exists and reports v0.2.64
+        run: |
+          URL="https://esakits.github.io/ipa-keyboard-test/vowel-release-v0.2.64/"
+          for i in $(seq 1 15); do
+            if curl -fsSL "$URL" -o /tmp/v064.html && grep -q 'v0.2.64' /tmp/v064.html && grep -q 'padding-top:6px;padding-bottom:7px' /tmp/v064.html; then
+              echo "Published page verified: $URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Published v0.2.64 not verified" >&2
+          exit 1
