@@ -1,0 +1,60 @@
+name: Verify and publish corrected on-page version v0.2.65
+on:
+  push:
+    branches: ['work/vowel-v060-20261111']
+    paths:
+      - 'vowel-release-v0.2.65/**'
+      - '.github/workflows/publish-v065.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-publish-v065
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --only-shell
+      - name: Test screen version and click rows at two viewports
+        run: node vowel-release-v0.2.65/verify.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v065-inspection
+          path: audit-output/v065/
+      - name: Package all existing releases with new release
+        run: |
+          mkdir -p /tmp/ipa-v065-site
+          rsync -a --exclude=.git --exclude=.github --exclude=node_modules --exclude=audit-output ./ /tmp/ipa-v065-site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/ipa-v065-site
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.65/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify published HTML screen label and title
+        run: |
+          URL="https://esakits.github.io/ipa-keyboard-test/vowel-release-v0.2.65/"
+          for i in $(seq 1 15); do
+            if curl -fsSL "$URL" -o /tmp/v065.html && grep -q 'aria-label="バージョン0.2.65">0.2.65</span>' /tmp/v065.html && grep -q '日本語版 v0.2.65' /tmp/v065.html; then
+              echo "Published visible-version check passed: $URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
