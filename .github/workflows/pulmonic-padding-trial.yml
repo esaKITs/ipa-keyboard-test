@@ -1,0 +1,48 @@
+name: Verify and publish isolated pulmonic padding trial
+on:
+  push:
+    branches: ['work/pulmonic-bottom-padding-20261111']
+    paths:
+      - 'pulmonic-bottom-trial/**'
+      - '.github/workflows/pulmonic-padding-trial.yml'
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-pulmonic-trial
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Verify isolated change and actual browser rendering
+        run: node pulmonic-bottom-trial/verify.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pulmonic-bottom-trial-screenshots
+          path: audit-output/pulmonic-trial/
+      - name: Assemble preserved site with isolated trial
+        run: |
+          mkdir -p /tmp/pulmonic-trial-site
+          rsync -a --exclude=.git --exclude=.github --exclude=node_modules --exclude=audit-output ./ /tmp/pulmonic-trial-site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/pulmonic-trial-site
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}pulmonic-bottom-trial/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
