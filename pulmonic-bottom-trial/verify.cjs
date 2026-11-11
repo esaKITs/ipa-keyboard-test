@@ -1,7 +1,7 @@
 const {chromium,webkit}=require('playwright'),fs=require('fs'),path=require('path'),assert=require('assert').strict;
 const base=fs.readFileSync('vowel-release-v0.2.60/index.html','utf8');
 const test=fs.readFileSync('pulmonic-bottom-trial/index.html','utf8');
-const patch='\n/* Isolated trial: reserve 3px below pulmonic consonant glyphs only. */\n#chart #pulmonicConsonants tbody td{padding-bottom:3px}';
+const patch='\n/* Pulmonic only: add glyph-bottom breathing room without creating a white gap below gray impossible spans. */\n#chart #pulmonicConsonants tbody td > span{padding-bottom:3px}\n/* Pulmonic place-of-articulation header: restore breathing room independently of body rows. */\n#chart #pulmonicConsonants thead th{padding-top:4px;padding-bottom:4px}';
 assert.equal(test.replace(patch,'').replaceAll('0.2.60-pulmonic-trial</span>','0.2.60</span>').replaceAll('バージョン0.2.60 肺気流試験','バージョン0.2.60'),base,'trial unexpectedly changes other content');
 (async()=>{
  const out='audit-output/pulmonic-trial';fs.mkdirSync(out,{recursive:true});
@@ -20,10 +20,18 @@ assert.equal(test.replace(patch,'').replaceAll('0.2.60-pulmonic-trial</span>','0
     return {cellCount:cells.length,bottoms:[...new Set(cells.map(x=>style(x).paddingBottom))],
       top:[...new Set(cells.map(x=>style(x).paddingTop))],
       lowerBottoms:[...new Set(lower.map(x=>style(x).paddingBottom))],
+      glyphPadding:[...new Set([...table.querySelectorAll('tbody td > span')].map(x=>style(x).paddingBottom))],
+      graySpanPadding:[...new Set([...table.querySelectorAll('span.impossible')].map(x=>style(x).paddingBottom))],
+      headerTop:[...new Set([...table.querySelectorAll('thead th')].map(x=>style(x).paddingTop))],
+      headerBottom:[...new Set([...table.querySelectorAll('thead th')].map(x=>style(x).paddingBottom))],
       tableWidth:table.getBoundingClientRect().width,chartWidth:document.querySelector('#chart').getBoundingClientRect().width};
    });
    assert(data.cellCount>30,'Missing pulmonic cells');
-   assert.deepEqual(data.bottoms,['3px'],'Trial padding absent');
+   assert.deepEqual(data.bottoms,['0px'],'Cell padding must stay zero so gray spans reach bottom');
+   assert.deepEqual(data.glyphPadding,['3px'],'Glyph bottom padding absent');
+   assert.deepEqual(data.graySpanPadding,['3px'],'Gray impossible span padding absent');
+   assert.deepEqual(data.headerTop,['4px'],'Place header top padding not restored');
+   assert.deepEqual(data.headerBottom,['4px'],'Place header bottom padding not restored');
    assert.deepEqual(data.top,['0px'],'Top padding changed');
    assert.deepEqual(data.lowerBottoms,['0px'],'Other table affected');
    assert.deepEqual(errors,[],'Page errors');
