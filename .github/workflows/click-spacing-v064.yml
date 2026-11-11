@@ -11,12 +11,12 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: pages-click-spacing-v064
+  group: pages-click-spacing-v064-bounded
   cancel-in-progress: false
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
         with:
