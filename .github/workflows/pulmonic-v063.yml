@@ -1,0 +1,53 @@
+name: Verify and publish pulmonic v0.2.63
+on:
+  push:
+    branches: ['work/vowel-v060-20261111']
+    paths:
+      - 'vowel-release-v0.2.63/**'
+      - '.github/workflows/pulmonic-v063.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-pulmonic-v063
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --only-shell
+      - name: Inspect only v0.2.63 pulmonic headers, gray areas and existing glyph-bottom layout
+        run: node vowel-release-v0.2.63/verify.cjs
+      - name: Preserve every existing file and version
+        run: git diff --exit-code 62d5857ae49e56df094efbaa90bf8584d9f6a0f2 HEAD -- . ':!vowel-release-v0.2.63' ':!.github/workflows/pulmonic-v063.yml'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pulmonic-v063-inspection
+          path: audit-output/v063/
+      - name: Package preserved test site with independent v0.2.63 path
+        run: |
+          mkdir -p /tmp/pulmonic-v063-site
+          rsync -a --exclude=.git --exclude=.github --exclude=node_modules --exclude=audit-output ./ /tmp/pulmonic-v063-site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/pulmonic-v063-site
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.63/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
