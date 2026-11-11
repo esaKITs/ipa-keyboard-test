@@ -1,0 +1,19 @@
+name: IPA v0.2.57 WebKit browser validation
+on:
+  push:
+    paths:
+      - 'tests/verify-vowel-v057-webkit.cjs'
+      - '.github/workflows/verify-vowel-v057-webkit.yml'
+  workflow_dispatch:
+jobs:
+  safari:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install --with-deps webkit
+      - run: node tests/verify-vowel-v057-webkit.cjs
