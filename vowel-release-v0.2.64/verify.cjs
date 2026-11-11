@@ -38,4 +38,4 @@ assert.equal(candidate,base.replaceAll('v0.2.63','v0.2.64').replace('#chart #non
   await page.close();
  }
  await browser.close();fs.writeFileSync(out+'/results.json',JSON.stringify(results,null,2));console.log('CLICK ROW VERIFICATION PASSED',JSON.stringify(results));
-})().catch(e=>{console.error(e);process.exitCode=1});
+})().catch(e=>{console.error(e);process.exit(1)});
