@@ -4,6 +4,7 @@ on:
     branches: ['work/vowel-v060-20261111']
     paths:
       - 'vowel-release-v0.2.60/**'
+      - 'pulmonic-bottom-trial/**'
       - '.github/workflows/vowel-v060.yml'
   workflow_dispatch:
 permissions:
@@ -35,6 +36,7 @@ jobs:
       - run: python vowel-release-v0.2.60/verify_geometry.py
       - run: python vowel-release-v0.2.60/verify_24.py
       - run: node vowel-release-v0.2.60/regression.cjs
+      - run: node pulmonic-bottom-trial/verify.cjs
       - name: Ensure every pre-existing file remains unchanged
         run: |
           git diff --exit-code 74c8cd4b23348d6791d9630bd54948fa5d629a97 HEAD -- . ':!vowel-release-v0.2.60' ':!.github/workflows/vowel-v060.yml'
