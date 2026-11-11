@@ -11,7 +11,7 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
   const state=await page.evaluate(async s=>{
     const input=document.getElementById('vowelFontSize');input.value=s;input.dispatchEvent(new Event('input',{bubbles:true}));
     if(document.fonts)await document.fonts.ready;
-    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(requestAnimationFrame(r)))));
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(r))));
     const svg=document.querySelector('#vowelQuadrilateral svg');
     const glyphs=[...svg.querySelectorAll('.vowel-dynamic-glyph')];
     const lines=[...svg.querySelectorAll('path.official-vowel-rule')].map(p=>({id:p.dataset.officialDrawing||'front',d:p.getAttribute('d')}));
