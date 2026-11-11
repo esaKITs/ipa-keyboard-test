@@ -16,6 +16,7 @@ for(let i=0;i<5;i++){
  const cell=page.locator('#nonPulmonicConsonants tbody tr').nth(i).locator('td').first();
  const bytes=await cell.screenshot({timeout:15000,animations:'disabled'}),png=PNG.sync.read(bytes);
  const measured=detect(png,Math.ceil(png.width*.25),Math.floor(png.width*.75),2,png.height-2);
+ if(i===4){const slices=[];for(let yy=Math.max(0,png.height-30);yy<png.height;yy++){let count=0;for(let xx=Math.floor(png.width*.25);xx<Math.floor(png.width*.75);xx++){const k=(yy*png.width+xx)*4;if(png.data[k]<145&&png.data[k+1]<145&&png.data[k+2]<145)count++;}slices.push([yy,count]);}console.log('DEBUG LATERAL',JSON.stringify({width,cellHeight:png.height,padding:details.rows[4].cells[0].paddingBottom,rows:slices}));}
  const gap=(png.height-1-measured.maxY)/3;
  const r={glyph:clicks[i],cellPixels:{w:png.width,h:png.height},inkPixelBottom:measured.maxY,inkBottomGapCSS:gap,inkCount:measured.count};
  assert(measured.count>10,'Missing rendered glyph '+clicks[i]);
