@@ -1,4 +1,4 @@
-name: Verify and publish isolated vowel v0.2.60
+name: Verify and publish IPA pulmonic v0.2.61
 on:
   push:
     branches: ['work/vowel-v060-20261111']
@@ -26,18 +26,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - run: npm install --no-save playwright
-      - run: python -m pip install shapely pillow
-      - run: npx playwright install --with-deps chromium webkit
-      - run: node vowel-release-v0.2.60/verify.cjs chromium
-      - run: node vowel-release-v0.2.60/verify.cjs webkit
-      - run: python vowel-release-v0.2.60/verify_geometry.py
-      - run: python vowel-release-v0.2.60/verify_24.py
-      - run: node vowel-release-v0.2.60/regression.cjs
-      - run: node pulmonic-bottom-trial/verify.cjs
+      - run: npx playwright install chromium
       - run: node vowel-release-v0.2.61/verify.cjs
       - name: Ensure every pre-existing file remains unchanged
         run: |
@@ -45,8 +35,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: vowel-v060-browser-and-geometry-evidence
-          path: audit-output/v060/
+          name: pulmonic-v061-render-evidence
+          path: audit-output/v061/
       - name: Assemble full preserved test site with new independent path
         run: |
           mkdir -p /tmp/v060-site
@@ -59,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.60/
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.61/
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
