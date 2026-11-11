@@ -44,7 +44,7 @@ for ch in chars:
  pts=hull(pen.points)
  advance=font['hmtx'].metrics[name][0]
  # Per-em coordinates relative to centered text advance and baseline.
- hulls.append({'char':ch,'polygon':[[round((x-advance/2)/units,6),round(-y/units,6)] for x,y in pts]})
+ hulls.append({'char':ch,'polygon':[[round((x-advance/2)/units,6),round(-y/units,6)] for x,y in reversed(pts)]})
 assert len(hulls)==28
 html=Path('vowel-release-v0.2.55/index.html').read_text()
 html=html.replace('0.2.55','0.2.57')
