@@ -1,7 +1,7 @@
 'use strict';
 const {chromium}=require('playwright'),{PNG}=require('pngjs'),fs=require('fs'),path=require('path'),assert=require('node:assert/strict');
 const out='audit-output/v066-ink';fs.mkdirSync(out,{recursive:true});
-const detect=(png,x0,x1,y0,y1)=>{let n=0,minY=Infinity,maxY=-Infinity;for(let y=Math.max(0,Math.floor(y0));y<Math.min(png.height,Math.ceil(y1));y++)for(let x=Math.max(0,Math.floor(x0));x<Math.min(png.width,Math.ceil(x1));x++){const i=(y*png.width+x)*4;if(png.data[i]<145&&png.data[i+1]<145&&png.data[i+2]<145&&png.data[i+3]>180){n++;minY=Math.min(minY,y);maxY=Math.max(maxY,y);}}return {count:n,minY,maxY};};
+const detect=(png,x0,x1,y0,y1)=>{let n=0,minY=Infinity,maxY=-Infinity;const start=Math.max(0,Math.floor(x0)),end=Math.min(png.width,Math.ceil(x1));for(let y=Math.max(0,Math.floor(y0));y<Math.min(png.height,Math.ceil(y1));y++){let count=0;for(let x=start;x<end;x++){const i=(y*png.width+x)*4;if(png.data[i]<145&&png.data[i+1]<145&&png.data[i+2]<145&&png.data[i+3]>180)count++;}if(count>0.7*(end-start))continue;if(count){n+=count;minY=Math.min(minY,y);maxY=Math.max(maxY,y);}}return {count:n,minY,maxY}};
 (async()=>{const browser=await chromium.launch({headless:true});try{
 const result=[];
 for(const width of [1280,390]){
