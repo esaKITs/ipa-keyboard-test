@@ -706,8 +706,10 @@ body{padding:8px!important;overflow-x:hidden!important}
    Keep all glyph font sizes, horizontal spacing and vowel SVG unchanged. */
 #chart :is(#pulmonicConsonants,#nonPulmonicConsonants,#otherSymbols,#suprasegmentals,#diacritics,#tonesAndWordAccents) :is(td,th){line-height:1.08;height:auto;min-height:0}
 #chart #pulmonicConsonants :is(td,th){padding-top:0;padding-bottom:0}
-/* Isolated trial: reserve 3px below pulmonic consonant glyphs only. */
-#chart #pulmonicConsonants tbody td{padding-bottom:3px}
+/* Pulmonic only: add glyph-bottom breathing room without creating a white gap below gray impossible spans. */
+#chart #pulmonicConsonants tbody td > span{padding-bottom:3px}
+/* Pulmonic place-of-articulation header: restore breathing room independently of body rows. */
+#chart #pulmonicConsonants thead th{padding-top:4px;padding-bottom:4px}
 #chart #nonPulmonicConsonants :is(td,th){padding-top:0;padding-bottom:0}
 #chart #otherSymbols :is(td,th){padding-top:0;padding-bottom:0}
 #chart #suprasegmentals :is(td,th){padding-top:0;padding-bottom:0}
