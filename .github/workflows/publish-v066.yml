@@ -1,0 +1,73 @@
+name: Verify rendered click ink and publish v0.2.66
+on:
+  push:
+    branches: ['work/vowel-v060-20261111']
+    paths:
+      - 'vowel-release-v0.2.66/**'
+      - 'tests/verify-v066-ink.cjs'
+      - '.github/workflows/publish-v066.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-publish-v066
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright pngjs
+      - run: npx playwright install chromium --only-shell
+      - name: Inspect actual dark ink and bottom-border overspill at two viewports
+        run: node tests/verify-v066-ink.cjs
+      - name: Check source changes are limited to a new version and one CSS rule
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          old=Path('vowel-release-v0.2.65/index.html').read_text()
+          new=Path('vowel-release-v0.2.66/index.html').read_text()
+          rule='#chart #nonPulmonicConsonants tbody tr > :nth-child(-n+2){padding-top:6px;padding-bottom:7px;line-height:1.25;vertical-align:middle}'
+          extra='\n/* v0.2.66: extra ink clearance for the tall lateral click glyph only. */\n#chart #nonPulmonicConsonants tbody tr:last-child > td:first-child{padding-bottom:17px}'
+          assert new==old.replace('v0.2.65','v0.2.66').replace('0.2.65','0.2.66').replace(rule,rule+extra)
+          print('Old release preserved; only targeted CSS and version labels changed')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v066-raster-visual-audit
+          path: audit-output/v066-ink/
+      - name: Package entire test site without modifying older releases
+        run: |
+          mkdir -p /tmp/ipa-v066-site
+          rsync -a --exclude=.git --exclude=.github --exclude=node_modules --exclude=audit-output ./ /tmp/ipa-v066-site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/ipa-v066-site
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.66/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Confirm published URL contains new screen version and glyph clearance
+        run: |
+          URL="https://esakits.github.io/ipa-keyboard-test/vowel-release-v0.2.66/"
+          for i in $(seq 1 15); do
+            if curl -fsSL "$URL" -o /tmp/v066.html && grep -q 'aria-label="バージョン0.2.66">0.2.66</span>' /tmp/v066.html && grep -q 'tbody tr:last-child > td:first-child{padding-bottom:17px}' /tmp/v066.html; then
+              echo "Published v0.2.66 verified: $URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Published HTML verification failed" >&2
+          exit 1
