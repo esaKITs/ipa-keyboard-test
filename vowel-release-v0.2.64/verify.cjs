@@ -14,8 +14,8 @@ assert.equal(candidate,base.replaceAll('v0.2.63','v0.2.64').replace('#chart #non
   for(const version of ['63','64']){
    const errors=[];page.on('pageerror',e=>errors.push(e.message));
    const url=process.env.PUBLIC_BASE?process.env.PUBLIC_BASE+'/vowel-release-v0.2.'+version+'/':'file://'+path.resolve('vowel-release-v0.2.'+version+'/index.html');
-   const response=await page.goto(url);if(process.env.PUBLIC_BASE)assert.equal(response.status(),200);
-   await page.evaluate(()=>document.fonts.ready);
+   const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:20000});if(process.env.PUBLIC_BASE)assert.equal(response.status(),200);
+   await Promise.race([page.evaluate(()=>document.fonts.ready),page.waitForTimeout(3000)]);
    const data=await page.evaluate(()=>{
     const root=document.querySelector('#nonPulmonicConsonants'),rows=[...root.querySelectorAll('tbody tr')],r=e=>{const x=e.getBoundingClientRect();return {x:x.x,y:x.y,right:x.right,bottom:x.bottom,width:x.width,height:x.height}},cs=e=>getComputedStyle(e);
     const table=root.querySelector('table'),scale=document.querySelector('#chart').getBoundingClientRect().width/1040;
@@ -27,7 +27,7 @@ assert.equal(candidate,base.replaceAll('v0.2.63','v0.2.64').replace('#chart #non
     for(let i=0;i<5;i++){const [glyph,label]=data.rows[i].cells;assert.equal(glyph.paddingTop,'6px');assert.equal(glyph.paddingBottom,'7px');assert.equal(label.paddingTop,'6px');assert.equal(label.paddingBottom,'7px');assert(glyph.rect.height>20,'Click row too short');}
     const last=data.rows[4].cells[0];assert(last.rect.bottom<=data.table.bottom+0.25,'Last click cell overflows table');
    }
-   await page.locator('#nonPulmonicConsonants').screenshot({path:`${out}/v0.2.${version}-${width}.png`});
+   await page.locator('#nonPulmonicConsonants').screenshot({path:`${out}/v0.2.${version}-${width}.png`,timeout:12000,animations:'disabled'});
    fs.writeFileSync(`${out}/v0.2.${version}-${width}.json`,JSON.stringify({url,errors,...data},null,2));pair.push(data);
   }
   const [before,after]=pair;for(let i=0;i<5;i++){
