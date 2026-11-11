@@ -11,7 +11,7 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: pages-click-spacing-v064-bounded
+  group: pages-click-spacing-v064-final
   cancel-in-progress: false
 jobs:
   verify:
