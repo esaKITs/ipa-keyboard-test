@@ -1,0 +1,27 @@
+'use strict';
+const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),assert=require('node:assert/strict');
+const out='audit-output/v073';fs.mkdirSync(out,{recursive:true});
+const old=fs.readFileSync('vowel-release-v0.2.72/index.html','utf8'),now=fs.readFileSync('vowel-release-v0.2.73/index.html','utf8');
+const anchor='#chart #tonesAndWordAccents tbody .ipa-text-arrow{font-size:26px}';
+const extra='\n/* v0.2.73: align suprasegmental and tone symbols to actual 25.5px vowel glyphs; narrow tone block without changing labels. */\n#chart #suprasegmentals tbody td.symbol,#chart #suprasegmentals tbody td.example{font-size:25.5px}\n#chart>.ipa-pdf-right>#tonesAndWordAccents{width:410px;align-self:flex-start}\n#chart #tonesAndWordAccents table{width:100%;max-width:100%}\n#chart #tonesAndWordAccents tbody td,#chart #tonesAndWordAccents tbody .ipa-text-arrow{font-size:25.5px}\n#chart #tonesAndWordAccents tbody th{padding-left:3px;padding-right:3px}\n';
+assert.equal(now,old.replaceAll('0.2.72','0.2.73').replace(anchor,anchor+extra),'Unexpected change in v073');
+(async()=>{const browser=await chromium.launch({headless:true});try{const report=[];
+for(const width of [1280,390]){const page=await browser.newPage({viewport:{width,height:1400},deviceScaleFactor:3});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto('file://'+path.resolve('vowel-release-v0.2.73/index.html'),{waitUntil:'domcontentloaded',timeout:25000});
+await Promise.race([page.evaluate(()=>document.fonts.ready),page.waitForTimeout(4000)]);
+const d=await page.evaluate(()=>{const R=e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom,right:r.right}};
+const supr=document.querySelector('#suprasegmentals'),tone=document.querySelector('#tonesAndWordAccents'),chart=document.querySelector('#chart'),scale=R(chart).width/1040;
+return {version:document.querySelector('#appVersion').textContent.trim(),scale,supra:R(supr),tone:R(tone),toneTable:R(tone.querySelector('table')),toneRows:[...tone.querySelectorAll('tbody tr')].map(row=>({cells:[...row.cells].map(e=>({text:e.textContent.trim(),tag:e.tagName,font:getComputedStyle(e).fontSize,box:R(e),scrollWidth:e.scrollWidth,clientWidth:e.clientWidth}))})),suprSymbols:[...supr.querySelectorAll('tbody td.symbol,tbody td.example')].map(e=>({text:e.textContent.trim(),font:getComputedStyle(e).fontSize,box:R(e)})),toneGlyphs:[...tone.querySelectorAll('tbody td')].map(e=>({text:e.textContent.trim(),font:getComputedStyle(e).fontSize,box:R(e)})),vowelGlyphSize:getComputedStyle(document.querySelector('.vowel-chart-svg .vowel-symbols text')).fontSize,fontLoaded:document.fonts.check('25.5px "Doulos SIL Local"')};});
+assert.equal(d.version,'0.2.73');assert(d.fontLoaded);assert.equal(d.vowelGlyphSize,'25.5px');
+assert(d.suprSymbols.every(x=>x.font==='25.5px'));assert(d.toneGlyphs.every(x=>x.font==='25.5px'));
+assert(Math.abs(d.tone.width/d.scale-410)<.2);assert(Math.abs(d.toneTable.width/d.scale-410)<.2);
+assert(d.toneRows.length===7);assert.equal(errors.length,0);
+const overflow=d.toneRows.flatMap((r,i)=>r.cells.filter(c=>c.scrollWidth>c.clientWidth+1).map(c=>({i,text:c.text,scroll:c.scrollWidth,client:c.clientWidth})));
+console.log('V073 OVERFLOW',JSON.stringify({width,overflow}));
+assert.equal(overflow.length,0,'Tone cell overflow '+JSON.stringify(overflow));
+await page.locator('#suprasegmentals').screenshot({path:`${out}/supra-${width}.png`,animations:'disabled'});
+await page.locator('#tonesAndWordAccents').screenshot({path:`${out}/tone-${width}.png`,animations:'disabled'});
+fs.writeFileSync(`${out}/metrics-${width}.json`,JSON.stringify(d,null,2));
+report.push({width,supraWidth:d.supra.width/d.scale,toneWidth:d.tone.width/d.scale,vowelGlyphSize:d.vowelGlyphSize,toneGlyphCount:d.toneGlyphs.length,overflows:overflow.length});await page.close();}
+fs.writeFileSync(out+'/result.json',JSON.stringify(report,null,2));console.log('V073 SIZES AND WIDTH PASS',JSON.stringify(report));
+}finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});
