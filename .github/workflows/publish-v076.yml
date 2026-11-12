@@ -1,0 +1,61 @@
+name: Verify and publish diacritics width and font v0.2.76
+on:
+  push:
+    branches: ['work/vowel-v060-20261111']
+    paths:
+      - 'vowel-release-v0.2.76/**'
+      - 'tests/verify-v076.cjs'
+      - '.github/workflows/publish-v076.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-publish-v076
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --only-shell
+      - name: Browser verify diacritics width font and no collisions
+        run: node tests/verify-v076.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v076-diacritics-layout-inspection
+          path: audit-output/v076/
+      - name: Package releases preserving prior versions
+        run: |
+          mkdir -p /tmp/v076-site
+          rsync -a --exclude=.git --exclude=.github --exclude=node_modules --exclude=audit-output ./ /tmp/v076-site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/v076-site
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.76/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify deployed version and 68-percent diacritics CSS
+        run: |
+          URL="https://esakits.github.io/ipa-keyboard-test/vowel-release-v0.2.76/"
+          for i in $(seq 1 15); do
+            if curl -fsSL "$URL" -o /tmp/v076.html && grep -q 'aria-label="バージョン0.2.76">0.2.76</span>' /tmp/v076.html && grep -q 'diacritics{width:707px;align-self:flex-start}' /tmp/v076.html; then
+              echo "LIVE V076 VERIFIED: $URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
