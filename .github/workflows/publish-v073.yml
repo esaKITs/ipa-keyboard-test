@@ -1,0 +1,61 @@
+name: Verify and publish suprasegmental and tone symbols v0.2.73
+on:
+  push:
+    branches: ['work/vowel-v060-20261111']
+    paths:
+      - 'vowel-release-v0.2.73/**'
+      - 'tests/verify-v073.cjs'
+      - '.github/workflows/publish-v073.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-publish-v073
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --only-shell
+      - name: Verify 25.5px matching vowel symbols and tone width at desktop and mobile
+        run: node tests/verify-v073.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v073-suprasegmentals-tones-inspection
+          path: audit-output/v073/
+      - name: Package all releases preserving existing site
+        run: |
+          mkdir -p /tmp/v073-site
+          rsync -a --exclude=.git --exclude=.github --exclude=node_modules --exclude=audit-output ./ /tmp/v073-site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/v073-site
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.73/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify released HTML including both IPA font size and tone width
+        run: |
+          URL="https://esakits.github.io/ipa-keyboard-test/vowel-release-v0.2.73/"
+          for i in $(seq 1 15); do
+            if curl -fsSL "$URL" -o /tmp/v073.html && grep -q 'aria-label="バージョン0.2.73">0.2.73</span>' /tmp/v073.html && grep -q 'tonesAndWordAccents{width:410px;align-self:flex-start}' /tmp/v073.html && grep -q 'suprasegmentals tbody td.symbol,#chart #suprasegmentals tbody td.example{font-size:25.5px}' /tmp/v073.html; then
+              echo "LIVE V073 VERIFIED: $URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
