@@ -1,0 +1,62 @@
+name: Verify and publish suprasegmentals v0.2.69
+on:
+  push:
+    branches: ['work/vowel-v060-20261111']
+    paths:
+      - 'vowel-release-v0.2.69/**'
+      - 'tests/verify-v069-suprasegmentals.cjs'
+      - '.github/workflows/publish-v069.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-publish-v069
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --only-shell
+      - name: Inspect suprasegmental width, fonts, label overflow, untouched sections
+        run: node tests/verify-v069-suprasegmentals.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v069-suprasegmentals-inspection
+          path: audit-output/v069/
+      - name: Package previous releases plus isolated new revision
+        run: |
+          mkdir -p /tmp/ipa-v069-site
+          rsync -a --exclude=.git --exclude=.github --exclude=node_modules --exclude=audit-output ./ /tmp/ipa-v069-site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/ipa-v069-site
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.69/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify public page displays new version and suprasegmental changes
+        run: |
+          URL="https://esakits.github.io/ipa-keyboard-test/vowel-release-v0.2.69/"
+          for i in $(seq 1 15); do
+            if curl -fsSL "$URL" -o /tmp/v069.html && grep -q 'aria-label="バージョン0.2.69">0.2.69</span>' /tmp/v069.html && grep -q 'suprasegmentals{width:281px;align-self:flex-start}' /tmp/v069.html && grep -q 'suprasegmentals tbody td.symbol{font-size:24px}' /tmp/v069.html; then
+              echo "LIVE V069 VERIFIED: $URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "LIVE V069 VERIFICATION FAILED" >&2
+          exit 1
