@@ -1,0 +1,61 @@
+name: Verify and publish vowel-relative suprasegmentals v0.2.70
+on:
+  push:
+    branches: ['work/vowel-v060-20261111']
+    paths:
+      - 'vowel-release-v0.2.70/**'
+      - 'tests/verify-v070-layout.cjs'
+      - '.github/workflows/publish-v070.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-publish-v070
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --only-shell
+      - name: Verify official relative alignment, columns, symbols and viewport layout
+        run: node tests/verify-v070-layout.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v070-vowel-relative-layout
+          path: audit-output/v070/
+      - name: Package independent release while preserving old files
+        run: |
+          mkdir -p /tmp/v070-site
+          rsync -a --exclude=.git --exclude=.github --exclude=node_modules --exclude=audit-output ./ /tmp/v070-site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/v070-site
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.70/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Check public on-screen version and three-column layout
+        run: |
+          URL="https://esakits.github.io/ipa-keyboard-test/vowel-release-v0.2.70/"
+          for i in $(seq 1 16); do
+            if curl -fsSL "$URL" -o /tmp/v070.html && grep -q 'aria-label="バージョン0.2.70">0.2.70</span>' /tmp/v070.html && grep -q 'suprasegmentals table{table-layout:fixed;width:281px}' /tmp/v070.html; then
+              echo "LIVE V070 VERIFIED: $URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
