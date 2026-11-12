@@ -64,8 +64,8 @@ jobs:
         run: |
           URL="https://esakits.github.io/ipa-keyboard-test/vowel-release-v0.2.68/"
           for i in $(seq 1 15); do
-            if curl -fsSL "$URL" -o /tmp/v068.html && grep -q 'aria-label="バージョン0.2.68">0.2.68</span>' /tmp/v068.html && grep -q 'padding-top:3px;padding-bottom:4px;line-height:1.15' /tmp/v068.html; then
-              echo "LIVE V067 VERIFIED: $URL"
+            if curl -fsSL "$URL" -o /tmp/v068.html && grep -q 'aria-label="バージョン0.2.68">0.2.68</span>' /tmp/v068.html && grep -q 'padding-top:3px;padding-bottom:6px;line-height:1.15' /tmp/v068.html; then
+              echo "LIVE V068 VERIFIED: $URL"
               exit 0
             fi
             sleep 5
