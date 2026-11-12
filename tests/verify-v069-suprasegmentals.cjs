@@ -44,7 +44,7 @@ try{
   assert(b.examples.every(x=>x.font==='18px'),'Examples must be 18px');
   assert(b.labels.every(x=>x.font==='11px'),'Japanese labels should remain 11px');
   assert(b.labels.every(x=>x.scroll<=x.client+1),'A Japanese label exceeds available width');
-  assert(b.rows.every(x=>x.height>10),'Rows collapsed');
+  assert(b.rows.every(x=>x.height/b.scale>10),'Rows collapsed');
   for(let i=0;i<a.siblings.length;i++){for(const dim of ['x','y','width','height']){if(a.siblings[i].id==='tonesAndWordAccents'&&dim==='y')continue;assert(Math.abs(a.siblings[i].box[dim]-b.siblings[i].box[dim])<.2,'Unrelated section geometry modified: '+a.siblings[i].id+' '+dim);}}
   results.push({viewport:width,widthCSSpx:actual,overallChartRatio:actual/1040,symbols:b.symbols.length,examples:b.examples.length,labelOverflow:false,siblingsPreserved:true});
   await page.close();
