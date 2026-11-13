@@ -1,0 +1,100 @@
+name: Verify and publish IPA chart v0.2.81
+on:
+  push:
+    branches:
+      - work/vowel-v060-20261111
+    paths:
+      - 'vowel-release-v0.2.81/**'
+      - '.github/workflows/publish-v081.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-v081
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --with-deps
+      - name: Browser layout and interactions regression
+        run: |
+          node <<'JS'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            for(const width of [390,1280]){
+              const page=await browser.newPage({viewport:{width,height:844}});
+              const errors=[];
+              page.on('pageerror',e=>errors.push(String(e)));
+              await page.goto('file://' + process.cwd() + '/vowel-release-v0.2.81/index.html');
+              await page.evaluate(()=>document.fonts.ready);
+              const value=await page.evaluate(()=>{
+                const d=document.querySelector('#diacritics');
+                const s=document.querySelector('#suprasegmentals');
+                const v=document.querySelector('#vowels');
+                const t=document.querySelector('#tonesAndWordAccents');
+                const rect=e=>{const x=e.getBoundingClientRect();return {x:x.x,y:x.y,right:x.right,bottom:x.bottom,width:x.width,height:x.height}};
+                const dcell=d.querySelector('tbody td');
+                const style=getComputedStyle(dcell);
+                return {d:rect(d),s:rect(s),v:rect(v),t:rect(t),diacTop:style.paddingTop,diacBottom:style.paddingBottom,
+                version:document.querySelector('#appVersion')?.textContent, symbols:document.querySelectorAll('#diacritics tbody td').length};
+              });
+              console.log(JSON.stringify({width,...value,errors}));
+              if(value.version!=='0.2.80')throw Error('version mismatch');
+              if(value.s.width<=0 || Math.abs(value.s.right-value.v.right)>4)throw Error('suprasegmental not right aligned');
+              if(value.diacTop!=='4px'||value.diacBottom!=='5px')throw Error('diacritics spacing mismatch');
+              const rowData=await page.evaluate(()=>{
+                const rows=[...document.querySelectorAll('#pulmonicConsonants tbody tr')];
+                return rows.map(row=>({
+                  manner:row.querySelector('th.manner')?.textContent.trim(),
+                  cols:row.querySelectorAll('td').length,
+                  merged:[...row.querySelectorAll('td[colspan="3"]')].length,
+                  border:row.querySelectorAll('td')[2] ? getComputedStyle(row.querySelectorAll('td')[2]).borderRightWidth : null
+                }));
+              });
+              if(rowData.length!==8)throw Error('unexpected manner rows');
+              if(rowData.some(x=>x.manner==='摩擦音' ? (x.cols!==11||x.merged!==0) : (x.cols!==9||x.merged!==1)))throw Error('IPA merged cells mismatch: '+JSON.stringify(rowData));
+              const diacMargin=await page.evaluate(()=>getComputedStyle(document.querySelector('#diacritics')).marginTop);
+              if(diacMargin!=='0px')throw Error('diacritics margin: '+diacMargin);
+              if(value.d.right>value.s.x && value.d.y<value.s.bottom && value.s.y<value.d.bottom)throw Error('panel collision');
+              if(errors.length)throw Error(errors.join('; '));
+              await page.close();
+            }
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+      - name: Package entire branch to preserve existing pages
+        run: |
+          mkdir -p public
+          rsync -a --exclude=.git --exclude=.github --exclude=public ./ public/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+  deploy:
+    runs-on: ubuntu-latest
+    needs: verify
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.81/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify public page and version
+        run: |
+          URL="https://esakits.github.io/ipa-keyboard-test/vowel-release-v0.2.81/"
+          for i in $(seq 1 18); do
+            if curl -fsSL "$URL" -o /tmp/v081.html && grep -q 'aria-label="バージョン0.2.80">0.2.80</span>' /tmp/v081.html && grep -q 'padding-top:4px;padding-bottom:5px' /tmp/v081.html; then
+              echo "LIVE V081 VERIFIED: $URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
