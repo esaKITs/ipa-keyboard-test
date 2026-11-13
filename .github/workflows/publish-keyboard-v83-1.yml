@@ -1,0 +1,168 @@
+name: Verify and publish IPA Keyboard v83.1 popup restoration
+on:
+  push:
+    branches:
+      - work/ipa-keyboard-v83-1-20261114
+      - work/vowel-v060-20261111
+    paths:
+      - 'keyboard-v83-1-1/**'
+      - '.github/workflows/publish-keyboard-v83-1-1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-v83-1
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --with-deps
+      - name: Browser interaction and translation regression
+        run: |
+          python3 -m http.server 8000 >/tmp/ipa-v83-http.log 2>&1 &
+          node <<'JS'
+          const {chromium}=require('playwright');
+          (async()=>{
+           const browser=await chromium.launch({headless:true});
+           for(const width of [390,1280]){
+            const page=await browser.newPage({viewport:{width,height:844}});
+            const errors=[];page.on('pageerror',e=>errors.push('HOST '+String(e)));
+            await page.goto('http://127.0.0.1:8000/keyboard-v83-1-1/',{waitUntil:'load'});
+            const frame=page.frameLocator('#v83ChartFrame');
+            await frame.locator('#appVersion').waitFor();
+            const inner=page.frames().find(f=>f.url().includes('/keyboard-v83-1-1/chart.html'));
+            if(!inner)throw Error('Missing chart frame');
+            inner.on('pageerror',e=>errors.push('CHART '+String(e)));
+            await page.evaluate(()=>document.fonts.ready);
+            const stats=await inner.evaluate(()=>window.__v83HitStats?.());
+            console.log('STATS '+width+' '+JSON.stringify(stats));
+            if(!stats||stats.all<100||stats.bySection.vowels!==28)throw Error('missing symbol targets');
+            const title=await frame.locator('#appVersion').innerText();
+            if(title!=='0.2.98')throw Error('chart reference version changed');
+            const gear=await page.locator('#settingsToggle svg path').last().getAttribute('transform');
+            if(gear!=='translate(4.4 0) scale(.8 1)')throw Error('lost v82.5 gear correction');
+            const popupTarget=frame.locator('#vowelQuadrilateral .v83-ipa-key').first();
+            const popupBox=await popupTarget.boundingBox();
+            if(!popupBox)throw Error('popup key bounds absent');
+            await page.mouse.move(popupBox.x+popupBox.width/2,popupBox.y+popupBox.height/2);
+            await page.mouse.down();
+            const during=await inner.evaluate(()=>window.__v831PopupState?.());
+            if(!during?.show||during.text!=='i')throw Error('popup not visible while held '+JSON.stringify(during));
+            await page.mouse.up();
+            const after=await inner.evaluate(()=>window.__v831PopupState?.());
+            if(after?.show)throw Error('popup persists after release '+JSON.stringify(after));
+            console.log('POPUP_OK '+width);
+            const out=page.locator('#out');
+            await frame.locator('#vowelQuadrilateral .v83-ipa-key').first().click();
+            if(await out.inputValue()!=='i')throw Error('vowel input '+await out.inputValue());
+            const glow=await inner.evaluate(()=>{let a=document.querySelector('.v83-purple-flash');return{display:a.style.display,background:getComputedStyle(a).backgroundColor};});
+            if(glow.display!=='block'||!glow.background.includes('160, 122, 222'))throw Error('lavender feedback missing '+JSON.stringify(glow));
+            await frame.locator('#pulmonicConsonants .v83-ipa-key').first().click();
+            if(await out.inputValue()!=='ip')throw Error('pulmonic input '+await out.inputValue());
+            await page.locator('#undo').click();
+            if(await out.inputValue()!=='i')throw Error('undo failure');
+            await page.locator('#redo').click();
+            if(await out.inputValue()!=='ip')throw Error('redo failure');
+            await frame.locator('#nonPulmonicConsonants .v83-ipa-key').first().click();
+            if(!String(await out.inputValue()).includes('ʘ'))throw Error('nonpulmonic input');
+            await frame.locator('#diacritics .v83-ipa-key').first().click();
+            const current=await out.inputValue();if(!current.includes('̥'))throw Error('diacritic input '+current);
+            await frame.locator('#suprasegmentals .v83-ipa-key').first().click();
+            if(!String(await out.inputValue()).includes('ˈ'))throw Error('supra input');
+            for(const [locale,needle] of [['en','voiced bilabial approximant'],['pt-BR','aproximante bilabial vozeada'],['fa','تقریبی دولبی واکدار']]){
+             await page.locator('#languageSelect').selectOption(locale);
+             await page.waitForFunction(v=>[...document.querySelectorAll('.dia-ex')].some(el=>el.textContent.includes(v)),needle);
+             const chartText=await frame.locator('#diacritics').innerText();
+             if(chartText.includes('有声両唇接近音')||!chartText.includes(needle)){
+              const diag=await inner.evaluate(()=>{const walker=document.createTreeWalker(document.getElementById('diacritics'),NodeFilter.SHOW_TEXT),hits=[];while(walker.nextNode()){const n=walker.currentNode;if(n.nodeValue.includes('有声両唇接近音'))hits.push({text:n.nodeValue,parent:n.parentElement.outerHTML.slice(0,500),locale:document.documentElement.lang});}return {hits,wide:[...document.querySelectorAll('#diacritics .wideCell')].map(e=>e.innerText),locale:document.documentElement.lang};});
+              throw Error('untranslated chart phrase '+locale+' '+JSON.stringify(diag)+' '+chartText.slice(-400));
+             }
+             console.log('LOCALE_OK '+width+' '+locale);
+            }
+            await page.locator('#languageSelect').selectOption('ja');
+            await frame.locator('#chartZoomOpen').click();
+            if(!await page.locator('#v83ChartFrame').evaluate(el=>el.classList.contains('zoom-fullscreen')))throw Error('fullscreen frame not activated');
+            if(await frame.locator('#chartZoomDialog').isHidden())throw Error('zoom dialog not opened');
+            const zoomPopup=frame.locator('#vowelQuadrilateral .v83-ipa-key').first();
+            const zoomBox=await zoomPopup.boundingBox();if(!zoomBox)throw Error('zoom popup target missing');
+            await page.mouse.move(zoomBox.x+zoomBox.width/2,zoomBox.y+zoomBox.height/2);
+            await page.mouse.down();
+            const zoomOpenPopup=await inner.evaluate(()=>window.__v831PopupState?.());
+            if(!zoomOpenPopup?.show||zoomOpenPopup.text!=='i')throw Error('zoom popup failed '+JSON.stringify(zoomOpenPopup));
+            await page.mouse.up();
+            console.log('ZOOM_POPUP_OK '+width);
+            await frame.locator('#zoomPlus').click();
+            await frame.locator('#zoomMinus').click();
+            const before=await out.inputValue();
+            await frame.locator('#vowelQuadrilateral .v83-ipa-key').first().click();
+            if((await out.inputValue())!==before+'i')throw Error('zoom input failed');
+            await frame.locator('#zoomClose').click();
+            await page.waitForFunction(()=>!document.getElementById('v83ChartFrame').classList.contains('zoom-fullscreen'));
+            if(!await frame.locator('#chartZoomDialog').isHidden())throw Error('zoom dialog did not close');
+            const shape=await page.evaluate(()=>{let a=document.getElementById('v83ChartFrame').getBoundingClientRect();return{width:a.width,height:a.height,viewport:innerWidth,legacy:getComputedStyle(document.querySelector('.sheet-scroll')).display}});
+            if(shape.width>shape.viewport+2||shape.height<500||shape.legacy!=='none')throw Error('frame layout '+JSON.stringify(shape));
+            const sourceNotes=await frame.locator('#chartScaleContent > .source-note').allTextContents();
+            if(sourceNotes.length!==4||!sourceNotes[0].includes('江崎哲也')||!sourceNotes[1].includes('Weston Ruter'))throw Error('attribution missing');
+            // Exhaustive click audit: every registered symbol must insert exactly its own text.
+            const n=await frame.locator('.v83-ipa-key').count();
+            let successes=0;
+            for(let i=0;i<n;i++){
+             const target=frame.locator('.v83-ipa-key').nth(i);
+             const expected=await target.getAttribute('data-v83-sym');
+             const prior=await out.inputValue();
+             try{await target.click({timeout:2200});}
+             catch(e){throw Error('untappable glyph '+i+' '+expected+' '+String(e).slice(0,450));}
+             const next=await out.inputValue();
+             if(next===prior||!next.includes(expected)){
+              const spot=await target.evaluate(el=>{
+               const x=el.getBoundingClientRect(),cell=el.closest('td')?.getBoundingClientRect();
+               const center=document.elementFromPoint(x.x+x.width/2,x.y+x.height/2);
+               return {sym:el.dataset.v83Sym,rect:{x:x.x,y:x.y,w:x.width,h:x.height},cell:cell&&{x:cell.x,y:cell.y,w:cell.width,h:cell.height},center:center?.outerHTML.slice(0,300),parent:el.parentElement?.outerHTML.slice(0,420)};
+              });
+              throw Error('wrong or missing input at '+i+' '+expected+' '+JSON.stringify({prior:prior.slice(-15),next:next.slice(-15),spot}));
+             }
+             successes++;
+            }
+            console.log('ALL_KEYS_OK '+width+' '+successes);
+            if(errors.length)throw Error(errors.join(' | '));
+            console.log('PASS '+width+' '+JSON.stringify({shape,stats}));
+            await page.close();
+           }
+           await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+      - name: Package all preserved chart versions and keyboard tests
+        run: |
+          mkdir -p public
+          rsync -a --exclude=.git --exclude=.github --exclude=public ./ public/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}keyboard-v83-1-1/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Confirm actual public HTML
+        run: |
+          URL=https://esakits.github.io/ipa-keyboard-test/keyboard-v83-1-1/
+          for i in $(seq 1 20); do
+           if curl -fsSL "$URL" -o /tmp/v831.html && curl -fsSL "${URL}chart.html" -o /tmp/v831chart.html && grep -q '83.1 IPA Keyboard TEST' /tmp/v831.html && grep -q '0.2.98' /tmp/v831chart.html; then
+            echo "LIVE V83.1 VERIFIED $URL"
+            exit 0
+           fi
+           sleep 5
+          done
+          exit 1
