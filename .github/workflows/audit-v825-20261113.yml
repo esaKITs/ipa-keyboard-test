@@ -1,0 +1,67 @@
+name: Audit IPA Keyboard v82.5 translations and controls (read-only)
+on:
+  push:
+    branches:
+      - work/vowel-v060-20261111
+    paths:
+      - '.github/workflows/audit-v825-20261113.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --with-deps
+      - name: Assert DOM translations and keyboard behavior at 390 and 1280
+        run: |
+          python3 -m http.server 8000 >/tmp/server.log 2>&1 &
+          node <<'JS'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            for(const width of [390,1280]){
+              const page=await browser.newPage({viewport:{width,height:844}});
+              const errors=[];
+              page.on('pageerror',e=>errors.push(String(e)));
+              await page.goto('http://127.0.0.1:8000/',{waitUntil:'domcontentloaded'});
+              await page.locator('#languageSelect').waitFor();
+              const target=page.locator('.dia-ex').filter({hasText:'β̞'}).first();
+              await target.waitFor();
+              const expected={
+                en:'voiced bilabial approximant',
+                'pt-BR':'aproximante bilabial vozeada',
+                fa:'تقریبی دولبی واکدار'
+              };
+              for(const [locale,translated] of Object.entries(expected)){
+                await page.locator('#languageSelect').selectOption(locale);
+                await page.waitForFunction(x=>[...document.querySelectorAll('.dia-ex')].some(e=>e.textContent.includes('β̞')&&e.textContent.includes(x)),translated,{timeout:10000});
+                const actual=await target.innerText();
+                if(!actual.includes(translated)||actual.includes('有声両唇接近音'))throw Error('translation '+locale+': '+actual);
+                console.log('TRANSLATION_OK '+width+' '+locale+' '+actual);
+              }
+              await page.locator('#languageSelect').selectOption('ja');
+              await page.waitForFunction(()=>[...document.querySelectorAll('.dia-ex')].some(e=>e.textContent.includes('β̞')&&e.textContent.includes('有声両唇接近音')));
+              const gear=await page.locator('#settingsToggle svg path').last().getAttribute('transform');
+              if(gear!=='translate(4.4 0) scale(.8 1)')throw Error('gear correction absent '+gear);
+              await page.locator('#settingsToggle').click();
+              if(await page.locator('#settingsPanel').isHidden())throw Error('settings panel failed');
+              await page.locator('#settingsToggle').click();
+              await page.locator('.key[data-sym="p"]').first().click();
+              if(await page.locator('#out').inputValue()!=='p')throw Error('IPA insertion failed');
+              await page.locator('#undo').click();
+              if(await page.locator('#out').inputValue()!=='')throw Error('undo failed');
+              await page.locator('#redo').click();
+              if(await page.locator('#out').inputValue()!=='p')throw Error('redo failed');
+              if(errors.length)throw Error('page errors '+errors.join(' | '));
+              console.log('CONTROL_OK '+width);
+              await page.close();
+            }
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
