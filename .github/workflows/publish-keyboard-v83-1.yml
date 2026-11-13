@@ -50,6 +50,7 @@ jobs:
             const gear=await page.locator('#settingsToggle svg path').last().getAttribute('transform');
             if(gear!=='translate(4.4 0) scale(.8 1)')throw Error('lost v82.5 gear correction');
             const popupTarget=frame.locator('#vowelQuadrilateral .v83-ipa-key').first();
+            await popupTarget.scrollIntoViewIfNeeded();
             const popupBox=await popupTarget.boundingBox();
             if(!popupBox)throw Error('popup key bounds absent');
             await page.mouse.move(popupBox.x+popupBox.width/2,popupBox.y+popupBox.height/2);
@@ -94,6 +95,7 @@ jobs:
             if(!await page.locator('#v83ChartFrame').evaluate(el=>el.classList.contains('zoom-fullscreen')))throw Error('fullscreen frame not activated');
             if(await frame.locator('#chartZoomDialog').isHidden())throw Error('zoom dialog not opened');
             const zoomPopup=frame.locator('#vowelQuadrilateral .v83-ipa-key').first();
+            await zoomPopup.scrollIntoViewIfNeeded();
             const zoomBox=await zoomPopup.boundingBox();if(!zoomBox)throw Error('zoom popup target missing');
             await page.mouse.move(zoomBox.x+zoomBox.width/2,zoomBox.y+zoomBox.height/2);
             await page.mouse.down();
