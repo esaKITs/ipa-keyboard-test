@@ -53,7 +53,7 @@ jobs:
                 const section=document.querySelector('#suprasegmentals');
                 const table=section.querySelector('table');
                 const cols=[...table.querySelectorAll('col')].map(c=>parseFloat(getComputedStyle(c).width));
-                return {section:section.getBoundingClientRect().width,table:table.getBoundingClientRect().width,cols};
+                return {section:parseFloat(getComputedStyle(section).width),table:parseFloat(getComputedStyle(table).width),cols};
               });
               if(Math.abs(supWidths.section-305)>1||Math.abs(supWidths.table-305)>1)throw Error('suprasegmentals width '+JSON.stringify(supWidths));
               const undertie=await page.locator('#suprasegmentals td.symbol[title="U+203F: UNDERTIE"]').innerText();
