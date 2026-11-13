@@ -1938,7 +1938,7 @@ function translate(raw){
  const full=mapping.get(key);
  if(full&&full[lang])return raw.replace(key,full[lang]);
  let value=raw;
- for(const [ja,row] of mapping){
+ for(const [ja,row] of [...mapping].sort((a,b)=>b[0].length-a[0].length)){
   if(ja.length<3||!row[lang]||ja===key)continue;
   if(value.includes(ja))value=value.split(ja).join(row[lang]);
  }
