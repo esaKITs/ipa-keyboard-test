@@ -51,7 +51,7 @@ jobs:
               if(value.version!=='0.2.95')throw Error('version mismatch');
               const nonPulmonicHeader=await page.evaluate(()=>{
                 const cells=[...document.querySelectorAll('#nonPulmonicConsonants thead th')];
-                const css=cells.map(e=>{const c=getComputedStyle(e),r=e.getBoundingClientRect();return {text:e.textContent.trim(),top:c.paddingTop,bottom:c.paddingBottom,lineHeight:c.lineHeight,height:r.height};});
+                const css=cells.map(e=>{const c=getComputedStyle(e),r=e.getBoundingClientRect();return {text:e.textContent.trim(),top:c.paddingTop,bottom:c.paddingBottom,lineHeight:c.lineHeight,height:e.clientHeight};});
                 const firstBody=document.querySelector('#nonPulmonicConsonants tbody tr:first-child td');
                 return {css,firstBodyPadding:getComputedStyle(firstBody).paddingTop};
               });
