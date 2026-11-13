@@ -5,8 +5,8 @@ on:
       - work/ipa-keyboard-v83-1-20261114
       - work/vowel-v060-20261111
     paths:
-      - 'keyboard-v83-1-1/**'
-      - '.github/workflows/publish-keyboard-v83-1-1.yml'
+      - 'keyboard-v83-1/**'
+      - '.github/workflows/publish-keyboard-v83-1.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -35,10 +35,10 @@ jobs:
            for(const width of [390,1280]){
             const page=await browser.newPage({viewport:{width,height:844}});
             const errors=[];page.on('pageerror',e=>errors.push('HOST '+String(e)));
-            await page.goto('http://127.0.0.1:8000/keyboard-v83-1-1/',{waitUntil:'load'});
+            await page.goto('http://127.0.0.1:8000/keyboard-v83-1/',{waitUntil:'load'});
             const frame=page.frameLocator('#v83ChartFrame');
             await frame.locator('#appVersion').waitFor();
-            const inner=page.frames().find(f=>f.url().includes('/keyboard-v83-1-1/chart.html'));
+            const inner=page.frames().find(f=>f.url().includes('/keyboard-v83-1/chart.html'));
             if(!inner)throw Error('Missing chart frame');
             inner.on('pageerror',e=>errors.push('CHART '+String(e)));
             await page.evaluate(()=>document.fonts.ready);
@@ -151,13 +151,13 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}keyboard-v83-1-1/
+      url: ${{ steps.deployment.outputs.page_url }}keyboard-v83-1/
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
       - name: Confirm actual public HTML
         run: |
-          URL=https://esakits.github.io/ipa-keyboard-test/keyboard-v83-1-1/
+          URL=https://esakits.github.io/ipa-keyboard-test/keyboard-v83-1/
           for i in $(seq 1 20); do
            if curl -fsSL "$URL" -o /tmp/v831.html && curl -fsSL "${URL}chart.html" -o /tmp/v831chart.html && grep -q '83.1 IPA Keyboard TEST' /tmp/v831.html && grep -q '0.2.98' /tmp/v831chart.html; then
             echo "LIVE V83.1 VERIFIED $URL"
