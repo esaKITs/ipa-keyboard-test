@@ -791,6 +791,11 @@ body{padding:8px!important;overflow-x:hidden!important}
 .v83-ipa-key{cursor:pointer!important;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .v83-ipa-key:focus-visible{outline:2px solid #9879d3!important;outline-offset:1px}
 .v83-purple-flash{position:fixed;z-index:2147483647;pointer-events:none;box-sizing:border-box;background:rgba(160,122,222,.18);border:1.5px solid #a083d9;border-radius:2px;display:none}
+/* A lower undertie glyph extends into the preceding row in the source design.
+   Keep original ink and positions, but place the '.' own cell above the
+   subsequent row for accurate hit testing within the cell. */
+#chart #suprasegmentals tbody tr:nth-child(8) td.symbol{position:relative;z-index:5}
+#chart #suprasegmentals tbody tr:nth-child(9) td.symbol{position:relative;z-index:4}
 </style></head><body><div class="chart-tool-row"><label class="vowel-font-control" for="vowelFontSize">母音文字 <input id="vowelFontSize" type="range" min="32" max="48" step="1" value="32" aria-label="母音記号のサイズ"><output id="vowelFontValue" for="vowelFontSize">32</output></label><button type="button" id="chartZoomOpen" aria-haspopup="dialog" aria-controls="chartZoomDialog">⛶ 拡大表示</button></div><div id="chartScaleShell"><div id="chartScaleContent"><div id="chart"><h1 id="title"><span id="appVersion" aria-label="バージョン0.2.98">0.2.98</span><span class="chart-title-main">国際音声記号 <span id="alphabetRevision">（IPA 2015/2005改訂・2026年公開の日本語版資料に準拠）</span></span></h1><div id="pulmonicConsonants">
 		<h2>子音（肺気流）</h2>
 		<table>
