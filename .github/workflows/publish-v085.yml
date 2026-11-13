@@ -1,0 +1,137 @@
+name: Verify and publish IPA chart v0.2.85
+on:
+  push:
+    branches:
+      - work/vowel-v060-20261111
+    paths:
+      - 'vowel-release-v0.2.85/**'
+      - '.github/workflows/publish-v085.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-v085
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --with-deps
+      - name: Browser layout and interactions regression
+        run: |
+          node <<'JS'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            for(const width of [390,1280]){
+              const page=await browser.newPage({viewport:{width,height:844}});
+              const errors=[];
+              page.on('pageerror',e=>errors.push(String(e)));
+              await page.goto('file://' + process.cwd() + '/vowel-release-v0.2.85/index.html');
+              await page.evaluate(()=>document.fonts.ready);
+              const value=await page.evaluate(()=>{
+                const d=document.querySelector('#diacritics');
+                const s=document.querySelector('#suprasegmentals');
+                const v=document.querySelector('#vowels');
+                const t=document.querySelector('#tonesAndWordAccents');
+                const rect=e=>{const x=e.getBoundingClientRect();return {x:x.x,y:x.y,right:x.right,bottom:x.bottom,width:x.width,height:x.height}};
+                const dcell=d.querySelector('tbody td');
+                const style=getComputedStyle(dcell);
+                return {d:rect(d),s:rect(s),v:rect(v),t:rect(t),diacTop:style.paddingTop,diacBottom:style.paddingBottom,
+                version:document.querySelector('#appVersion')?.textContent, symbols:document.querySelectorAll('#diacritics tbody td').length};
+              });
+              console.log(JSON.stringify({width,...value,errors}));
+              if(value.version!=='0.2.85')throw Error('version mismatch');
+              if(value.s.width<=0 || Math.abs(value.s.right-value.v.right)>4)throw Error('suprasegmental not right aligned');
+              if(value.diacTop!=='2px'||value.diacBottom!=='4px')throw Error('diacritics spacing mismatch');
+              const rowData=await page.evaluate(()=>{
+                const rows=[...document.querySelectorAll('#pulmonicConsonants tbody tr')];
+                return rows.map(row=>({
+                  manner:row.querySelector('th.manner')?.textContent.trim(),
+                  cols:row.querySelectorAll('td').length,
+                  merged:[...row.querySelectorAll('td[colspan="3"]')].length,
+                  border:row.querySelectorAll('td')[2] ? getComputedStyle(row.querySelectorAll('td')[2]).borderRightWidth : null
+                }));
+              });
+              if(rowData.length!==8)throw Error('unexpected manner rows');
+              const alignment=await page.evaluate(()=>{
+                const table=document.querySelector('#pulmonicConsonants table');
+                const alveolarHeader=table.querySelectorAll('thead th')[4].getBoundingClientRect();
+                return [...table.querySelectorAll('tbody tr')].filter(row=>row.querySelector('td[colspan="3"]')).map(row=>{
+                  const slot=row.querySelector('.alveolar-slot');
+                  const rect=slot.getBoundingClientRect();
+                  const symbolRects=[...slot.querySelectorAll('.voiceless,.voiced')].map(s=>{
+                    const q=s.getBoundingClientRect();return {symbol:s.textContent.trim(),x:q.x,width:q.width};
+                  });
+                  return {name:row.querySelector('th.manner').textContent.trim(),slotCenter:rect.x+rect.width/2,headerCenter:alveolarHeader.x+alveolarHeader.width/2,width:rect.width,headerWidth:alveolarHeader.width,symbolRects};
+                });
+              });
+              if(alignment.length!==7)throw Error('missing aligned rows');
+              for(const item of alignment){
+                if(Math.abs(item.slotCenter-item.headerCenter)>4)throw Error('alveolar center mismatch '+JSON.stringify(item));
+                if(Math.abs(item.width-item.headerWidth)>8)throw Error('alveolar width mismatch '+JSON.stringify(item));
+              }
+              if(rowData.some(x=>x.manner==='摩擦音' ? (x.cols!==11||x.merged!==0) : (x.cols!==9||x.merged!==1)))throw Error('IPA merged cells mismatch: '+JSON.stringify(rowData));
+              const diacMargin=await page.evaluate(()=>getComputedStyle(document.querySelector('#diacritics')).marginTop);
+              if(diacMargin!=='0px')throw Error('diacritics margin: '+diacMargin);
+              const note=await page.evaluate(()=>{
+                const p=document.querySelector('.ipa-pdf-left>.diacritics-note');
+                const example=p?.querySelector('.ipa');
+                const pr=p?.getBoundingClientRect(),er=example?.getBoundingClientRect();
+                return {present:!!p&&!!example,topDiff:pr&&er?er.top-pr.top:null,nowrap:p?getComputedStyle(p).whiteSpace:null,
+                  width:p?.clientWidth,scrollWidth:p?.scrollWidth,text:p?.innerText};
+              });
+              if(!note.present||note.nowrap!=='nowrap'||note.topDiff>8||note.scrollWidth>note.width+2)throw Error('diacritics example wraps or overflows: '+JSON.stringify(note));
+              const fine=await page.evaluate(()=>{
+                const t=document.querySelector('#diacritics table').getBoundingClientRect();
+                const p=document.querySelector('.diacritics-note').getBoundingClientRect();
+                const svg=document.querySelector('#vowelQuadrilateral svg');
+                const label=svg.querySelector('.vowel-note');
+                const bb=label.getBBox(), svgWidth=svg.viewBox.baseVal.width;
+                return {noteGap:p.top-t.bottom, noteMargin:getComputedStyle(document.querySelector('.diacritics-note')).marginTop,
+                  anchor:label.getAttribute('text-anchor'),x:Number(label.getAttribute('x')),svgWidth,textRight:bb.x+bb.width};
+              });
+              console.log('fine positioning '+JSON.stringify(fine));
+              if(fine.noteGap<0||fine.noteGap>6)throw Error('diacritics note gap '+JSON.stringify(fine));
+              if(fine.anchor!=='end'||fine.x!==500||Math.abs(fine.textRight-500)>2)throw Error('vowel note not right aligned '+JSON.stringify(fine));
+              if(value.d.right>value.s.x && value.d.y<value.s.bottom && value.s.y<value.d.bottom)throw Error('panel collision');
+              if(errors.length)throw Error(errors.join('; '));
+              await page.close();
+            }
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+      - name: Package entire branch to preserve existing pages
+        run: |
+          mkdir -p public
+          rsync -a --exclude=.git --exclude=.github --exclude=public ./ public/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+  deploy:
+    runs-on: ubuntu-latest
+    needs: verify
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}vowel-release-v0.2.85/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify public page and version
+        run: |
+          URL="https://esakits.github.io/ipa-keyboard-test/vowel-release-v0.2.85/"
+          for i in $(seq 1 18); do
+            if curl -fsSL "$URL" -o /tmp/v085.html && grep -q 'aria-label="バージョン0.2.85">0.2.85</span>' /tmp/v085.html && grep -q 'padding-top:2px;padding-bottom:4px' /tmp/v085.html; then
+              echo "LIVE V085 VERIFIED: $URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
