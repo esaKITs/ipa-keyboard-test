@@ -1926,7 +1926,7 @@ for(const ja of ['有声両唇接近音','有声歯茎摩擦音']){
  const example=dictionary.find(r=>r.ja==='= '+ja+'）');
  if(example){
   const row={ja};
-  for(const lang of ['en','pt_BR','fa'])row[lang]=example[lang]?.replace(/^= /,'').replace(/\\)$/,'');
+  for(const lang of ['en','pt_BR','fa'])row[lang]=example[lang]?.replace(/^= /,'').replace(/\)$/,'');
   row.ja_osaka=ja;mapping.set(ja,row);
  }
 }
