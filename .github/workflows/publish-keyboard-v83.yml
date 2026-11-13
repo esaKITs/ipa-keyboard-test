@@ -102,7 +102,14 @@ jobs:
              try{await target.click({timeout:2200});}
              catch(e){throw Error('untappable glyph '+i+' '+expected+' '+String(e).slice(0,450));}
              const next=await out.inputValue();
-             if(next===prior||!next.includes(expected))throw Error('wrong or missing input at '+i+' '+expected+' '+JSON.stringify({prior:prior.slice(-15),next:next.slice(-15)}));
+             if(next===prior||!next.includes(expected)){
+              const spot=await target.evaluate(el=>{
+               const x=el.getBoundingClientRect(),cell=el.closest('td')?.getBoundingClientRect();
+               const center=document.elementFromPoint(x.x+x.width/2,x.y+x.height/2);
+               return {sym:el.dataset.v83Sym,rect:{x:x.x,y:x.y,w:x.width,h:x.height},cell:cell&&{x:cell.x,y:cell.y,w:cell.width,h:cell.height},center:center?.outerHTML.slice(0,300),parent:el.parentElement?.outerHTML.slice(0,420)};
+              });
+              throw Error('wrong or missing input at '+i+' '+expected+' '+JSON.stringify({prior:prior.slice(-15),next:next.slice(-15),spot}));
+             }
              successes++;
             }
             console.log('ALL_KEYS_OK '+width+' '+successes);
