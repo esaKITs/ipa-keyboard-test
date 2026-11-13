@@ -69,7 +69,10 @@ jobs:
              await page.locator('#languageSelect').selectOption(locale);
              await page.waitForFunction(v=>[...document.querySelectorAll('.dia-ex')].some(el=>el.textContent.includes(v)),needle);
              const chartText=await frame.locator('#diacritics').innerText();
-             if(chartText.includes('有声両唇接近音')||!chartText.includes(needle))throw Error('untranslated chart phrase '+locale+' '+chartText.slice(-400));
+             if(chartText.includes('有声両唇接近音')||!chartText.includes(needle)){
+              const diag=await inner.evaluate(()=>{const walker=document.createTreeWalker(document.getElementById('diacritics'),NodeFilter.SHOW_TEXT),hits=[];while(walker.nextNode()){const n=walker.currentNode;if(n.nodeValue.includes('有声両唇接近音'))hits.push({text:n.nodeValue,parent:n.parentElement.outerHTML.slice(0,500),locale:document.documentElement.lang});}return hits;});
+              throw Error('untranslated chart phrase '+locale+' '+JSON.stringify(diag)+' '+chartText.slice(-400));
+             }
              console.log('LOCALE_OK '+width+' '+locale);
             }
             await page.locator('#languageSelect').selectOption('ja');
