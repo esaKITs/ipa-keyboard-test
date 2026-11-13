@@ -92,6 +92,20 @@ jobs:
             if(shape.width>shape.viewport+2||shape.height<500||shape.legacy!=='none')throw Error('frame layout '+JSON.stringify(shape));
             const sourceNotes=await frame.locator('#chartScaleContent > .source-note').allTextContents();
             if(sourceNotes.length!==4||!sourceNotes[0].includes('江崎哲也')||!sourceNotes[1].includes('Weston Ruter'))throw Error('attribution missing');
+            // Exhaustive click audit: every registered symbol must insert exactly its own text.
+            const n=await frame.locator('.v83-ipa-key').count();
+            let successes=0;
+            for(let i=0;i<n;i++){
+             const target=frame.locator('.v83-ipa-key').nth(i);
+             const expected=await target.getAttribute('data-v83-sym');
+             const prior=await out.inputValue();
+             try{await target.click({timeout:2200});}
+             catch(e){throw Error('untappable glyph '+i+' '+expected+' '+String(e).slice(0,450));}
+             const next=await out.inputValue();
+             if(next===prior||!next.includes(expected))throw Error('wrong or missing input at '+i+' '+expected+' '+JSON.stringify({prior:prior.slice(-15),next:next.slice(-15)}));
+             successes++;
+            }
+            console.log('ALL_KEYS_OK '+width+' '+successes);
             if(errors.length)throw Error(errors.join(' | '));
             console.log('PASS '+width+' '+JSON.stringify({shape,stats}));
             await page.close();
