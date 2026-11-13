@@ -48,7 +48,7 @@ jobs:
                 version:document.querySelector('#appVersion')?.textContent, symbols:document.querySelectorAll('#diacritics tbody td').length};
               });
               console.log(JSON.stringify({width,...value,errors}));
-              if(value.version!=='0.2.80')throw Error('version mismatch');
+              if(value.version!=='0.2.81')throw Error('version mismatch');
               if(value.s.width<=0 || Math.abs(value.s.right-value.v.right)>4)throw Error('suprasegmental not right aligned');
               if(value.diacTop!=='4px'||value.diacBottom!=='5px')throw Error('diacritics spacing mismatch');
               const rowData=await page.evaluate(()=>{
@@ -91,7 +91,7 @@ jobs:
         run: |
           URL="https://esakits.github.io/ipa-keyboard-test/vowel-release-v0.2.81/"
           for i in $(seq 1 18); do
-            if curl -fsSL "$URL" -o /tmp/v081.html && grep -q 'aria-label="バージョン0.2.80">0.2.80</span>' /tmp/v081.html && grep -q 'padding-top:4px;padding-bottom:5px' /tmp/v081.html; then
+            if curl -fsSL "$URL" -o /tmp/v081.html && grep -q 'aria-label="バージョン0.2.81">0.2.81</span>' /tmp/v081.html && grep -q 'padding-top:4px;padding-bottom:5px' /tmp/v081.html; then
               echo "LIVE V081 VERIFIED: $URL"
               exit 0
             fi
