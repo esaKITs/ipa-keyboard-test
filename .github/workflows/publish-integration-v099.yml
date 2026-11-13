@@ -1,0 +1,103 @@
+name: Verify and publish IPA Keyboard integration v0.2.99
+on:
+  push:
+    branches:
+      - work/vowel-v060-20261111
+    paths:
+      - 'keyboard-integration-v0.2.99/**'
+      - '.github/workflows/publish-integration-v099.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-keyboard-v099
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --with-deps
+      - name: Integration interaction and layout regression
+        run: |
+          python3 -m http.server 8000 >/tmp/ipa-http.log 2>&1 &
+          node <<'JS'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            for(const width of [390,1280]){
+              const page=await browser.newPage({viewport:{width,height:844}});
+              const errors=[];
+              page.on('pageerror',e=>errors.push('host: '+e));
+              await page.goto('http://127.0.0.1:8000/keyboard-integration-v0.2.99/');
+              const frame=page.frameLocator('#integratedChart');
+              await frame.locator('#appVersion').waitFor();
+              const fr=page.frames().find(f=>f.url().includes('chart.html'));
+              if(!fr)throw Error('chart iframe absent');
+              fr.on('pageerror',e=>errors.push('chart: '+e));
+              const notes=await frame.locator('#chartScaleContent > .source-note').allTextContents();
+              if(notes.length!==4||!notes[0].includes('江崎哲也')||!notes[1].includes('Weston Ruter氏')||!notes[3].includes('ベクター座標'))throw Error('credits lost');
+              if(await frame.locator('#appVersion').innerText()!=='0.2.98')throw Error('chart version changed');
+              const out=page.locator('#out');
+              await frame.locator('#vowelQuadrilateral .vowel-dynamic-glyph').first().click();
+              if(await out.inputValue()!=='i')throw Error('vowel insertion failed: '+await out.inputValue());
+              await frame.locator('#pulmonicConsonants td span[title^="U+"]', {hasText:'p'}).first().click();
+              if(await out.inputValue()!=='ip')throw Error('consonant insertion failed: '+await out.inputValue());
+              await page.locator('#undo').click();
+              if(await out.inputValue()!=='i')throw Error('undo failed');
+              await page.locator('#redo').click();
+              if(await out.inputValue()!=='ip')throw Error('redo failed');
+              await frame.locator('#nonPulmonicConsonants td[title^="U+"]').first().click();
+              if(await out.inputValue()!=='ipʘ')throw Error('non-pulmonic insertion failed: '+await out.inputValue());
+              await frame.locator('#diacritics td[title^="U+0325"]').click();
+              if(await out.inputValue()!=='ipʘ̥')throw Error('diacritic insertion failed: '+await out.inputValue());
+              await frame.locator('#suprasegmentals td.symbol[title^="U+02C8"]').click();
+              if(await out.inputValue()!=='ipʘ̥ˈ')throw Error('stress insertion failed: '+await out.inputValue());
+              await page.locator('#phonetic').click();
+              if(!String(await out.inputValue()).includes('['))throw Error('brackets failed');
+              const shape=await page.evaluate(()=>{
+                const f=document.getElementById('integratedChart');
+                const q=f.getBoundingClientRect();
+                return {frameHeight:q.height,frameWidth:q.width,windowWidth:innerWidth,legacy:getComputedStyle(document.querySelector('.sheet-scroll')).display};
+              });
+              console.log(JSON.stringify({width,shape,out:await out.inputValue(),errors}));
+              if(shape.frameHeight<500||shape.legacy!=='none'||shape.frameWidth>shape.windowWidth+2)throw Error('frame dimension invalid '+JSON.stringify(shape));
+              if(errors.length)throw Error(errors.join('; '));
+              await page.close();
+            }
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+      - name: Package entire branch to preserve existing pages
+        run: |
+          mkdir -p public
+          rsync -a --exclude=.git --exclude=.github --exclude=public ./ public/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+  deploy:
+    runs-on: ubuntu-latest
+    needs: verify
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}keyboard-integration-v0.2.99/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify public page and version
+        run: |
+          URL="https://esakits.github.io/ipa-keyboard-test/keyboard-integration-v0.2.99/"
+          for i in $(seq 1 18); do
+            if curl -fsSL "$URL" -o /tmp/integration-v099.html && grep -q '第76版 × 計測再構成チャート v0.2.98' /tmp/integration-v099.html && curl -fsSL "${URL}chart.html" -o /tmp/integration-chart.html && grep -q 'aria-label="バージョン0.2.98">0.2.98</span>' /tmp/integration-chart.html; then
+              echo "LIVE INTEGRATION VERIFIED: $URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
