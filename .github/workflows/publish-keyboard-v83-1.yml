@@ -61,6 +61,8 @@ jobs:
             if(after?.show)throw Error('popup persists after release '+JSON.stringify(after));
             console.log('POPUP_OK '+width);
             const out=page.locator('#out');
+            // The real pointer hold above commits one IPA character on release; reset before the standard insertion/undo assertions.
+            await out.fill('');
             await frame.locator('#vowelQuadrilateral .v83-ipa-key').first().click();
             if(await out.inputValue()!=='i')throw Error('vowel input '+await out.inputValue());
             const glow=await inner.evaluate(()=>{let a=document.querySelector('.v83-purple-flash');return{display:a.style.display,background:getComputedStyle(a).backgroundColor};});
