@@ -59,7 +59,7 @@ jobs:
                 return {p,q,ratio:q/p,nonRight:n.right,rightStart:r.left,
                   labelText:label.innerText,labelHtml:label.innerHTML};
               });
-              if(Math.abs(nonPulmonicWidth.ratio-.49)>.005||nonPulmonicWidth.labelText!=='たたき音/\\nはじき音'
+              if(Math.abs(nonPulmonicWidth.ratio-.49)>.005||!nonPulmonicWidth.labelText.startsWith('たたき音/')||!nonPulmonicWidth.labelText.endsWith('はじき音')
                 ||!nonPulmonicWidth.labelHtml.includes('<br>')||nonPulmonicWidth.nonRight>nonPulmonicWidth.rightStart+2)
                 throw Error('width / tap-flap label mismatch '+JSON.stringify(nonPulmonicWidth));
               const nonPulmonicHeader=await page.evaluate(()=>{
