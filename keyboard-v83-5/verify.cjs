@@ -84,10 +84,11 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  // A touch tap also produces input and the residual dot without a native selection.
  for(const i of [0,1,1,27]){
   const touchKey=vowels.nth(i),sym=await touchKey.getAttribute('data-v83-sym'),before=await out.inputValue(),touchPoint=await screenPoint(touchKey);
+  const caret=await out.evaluate(e=>({start:e.selectionStart,end:e.selectionEnd}));
   await page.touchscreen.tap(touchPoint.x,touchPoint.y);
   await f.waitForFunction(v=>__v834DotState().tag===v,sym,{timeout:3000});
   await page.waitForTimeout(350);
-  assert.equal(await out.inputValue(),before+sym,'one input per touch');
+  assert.equal(await out.inputValue(),before.slice(0,caret.start)+sym+before.slice(caret.end),'one input per touch at saved caret');
  }
  // Native keyboard focus remains visibly outlined; Enter and Space still insert.
  await vowels.first().focus();await page.keyboard.press('Tab');
