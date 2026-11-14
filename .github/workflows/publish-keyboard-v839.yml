@@ -24,7 +24,6 @@ jobs:
       - name: Chromium and WebKit complete browser verification
         run: |
           python3 -m http.server 8765 >/tmp/ipa839-http.log 2>&1 &
-          TEST_CASE=webkit/390 node keyboard-v83-9/verify.cjs
           node keyboard-v83-9/verify.cjs
       - uses: actions/upload-artifact@v4
         if: always()
