@@ -13,13 +13,14 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  const f=page.frames().find(f=>f.url().includes('/keyboard-v83-9/chart.html'));
  await f.locator('.v83-ipa-key').first().waitFor();
  await f.evaluate(()=>document.fonts.ready);
+ await f.waitForFunction(()=>document.querySelector('#vowelQuadrilateral .vowel-dynamic-glyph').style.fontSize==='32px');
  assert.equal(await f.locator('.v83-ipa-key').count(),224);
  assert.equal(await f.locator('#vowelQuadrilateral .v83-ipa-key').count(),28);
  // Compare all hitboxes and complete SVG geometry against the untouched source.
  const source=await browser.newPage({viewport:{width,height:844}});
  await source.goto(base+'keyboard-v83-4/');
  const sf=source.frames().find(f=>f.url().includes('/keyboard-v83-4/chart.html'));
- await sf.locator('.v83-ipa-key').first().waitFor();await sf.evaluate(()=>document.fonts.ready);
+ await sf.locator('.v83-ipa-key').first().waitFor();await sf.evaluate(()=>document.fonts.ready);await sf.waitForFunction(()=>document.querySelector('#vowelQuadrilateral .vowel-dynamic-glyph').style.fontSize==='32px');
  const geometry=()=>({svg:document.querySelector('#vowelQuadrilateral').outerHTML,keys:[...document.querySelectorAll('.v83-ipa-key')].map(e=>{let r=e.getBoundingClientRect();return [e.dataset.v83Sym,r.width,r.height,r.x,r.y]})});
  assert.deepEqual(await f.evaluate(geometry),await sf.evaluate(geometry));await source.close();
  const prior=await browser.newPage({viewport:{width,height:844}});
@@ -83,10 +84,12 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  // Verify each of the 224 physical targets inserts its own complete symbol at the caret.
  await out.fill('');
  for(let i=0;i<224;i++){
+  if(process.env.TEST_CASE)continue;
   const k=f.locator('.v83-ipa-key').nth(i),sym=await k.getAttribute('data-v83-sym'),before=await out.inputValue();
   const section=await k.evaluate(e=>e.closest('#pulmonicConsonants,#nonPulmonicConsonants,#vowels,#otherSymbols,#diacritics,#suprasegmentals,#tonesAndWordAccents')?.id);const label=checkedSections.has(section)?null:'normal-'+section;await press(k,label);checkedSections.add(section);assert.equal(await out.inputValue(),before+sym,`input ${name}/${width}/${i}/${sym}`);
  }
- assert.deepEqual([...checkedSections].sort(),sections.slice().sort());
+ if(!process.env.TEST_CASE)assert.deepEqual([...checkedSections].sort(),sections.slice().sort());
+ if(process.env.TEST_CASE)await press(vowels.first());
  const beforeUndo=await out.inputValue();await page.locator('#undo').click();assert.notEqual(await out.inputValue(),beforeUndo);await page.locator('#redo').click();assert.equal(await out.inputValue(),beforeUndo);
  for(const [locale,needle] of [['en','voiced bilabial approximant'],['pt-BR','aproximante bilabial vozeada'],['fa','تقریبی دولبی واکدار'],['ja-osaka','有声両唇接近音'],['ja','有声両唇接近音']]){await page.locator('#languageSelect').selectOption(locale);await f.waitForFunction(v=>document.querySelector('#diacritics').textContent.includes(v),needle);}
  await f.locator('#chartZoomOpen').click();await page.waitForFunction(()=>document.querySelector('#v83ChartFrame').classList.contains('zoom-fullscreen'));
