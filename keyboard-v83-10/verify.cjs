@@ -152,9 +152,9 @@ for(const [name,type] of Object.entries({chromium,webkit})){
   await press(keys.first(),'zoom-'+id);await press(keys.last());
  }
  for(let i=0;i<28;i++)await press(vowels.nth(i));
- await f.locator('#zoomMinus').click();await press(vowels.last());
- await f.locator('#zoomRange').fill('100');await press(vowels.first());
- await f.locator('#zoomMapToggle').click();assert(await f.locator('#zoomMinimap').isVisible());
+ await dragPanelTo(8,844-(await panel.boundingBox()).height-8);await f.locator('#zoomMinus').click();await press(vowels.last());
+ await dragPanelTo(8,844-(await panel.boundingBox()).height-8);await f.locator('#zoomRange').fill('100');await press(vowels.first());
+ await dragPanelTo(8,844-(await panel.boundingBox()).height-8);await f.locator('#zoomMapToggle').click();assert(await f.locator('#zoomMinimap').isVisible());
  await f.locator('#zoomClose').click();await page.waitForFunction(()=>!document.querySelector('#v83ChartFrame').classList.contains('zoom-fullscreen'));await press(vowels.last());
  // A touch tap also produces input and the residual dot without a native selection.
  const touchTargets=[];
