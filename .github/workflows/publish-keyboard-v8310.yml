@@ -10,9 +10,10 @@ permissions:
   id-token: write
 concurrency:
   group: pages-v8310
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   verify:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
