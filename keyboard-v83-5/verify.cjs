@@ -43,7 +43,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
   const end=await f.evaluate(()=>{const d=document.querySelector('#v834SelectedVowelDot'),r=d.getBoundingClientRect(),s=getComputedStyle(d),t=[...document.querySelectorAll('#vowelQuadrilateral .v83-ipa-key')].find(e=>e.dataset.v83Sym===__v834DotState().tag).getBoundingClientRect();return{dot:__v834DotState(),dx:r.x+r.width/2-t.x-t.width/2,dy:r.y+r.height/2-t.y-t.height/2,border:s.borderStyle,shadow:s.boxShadow,glow:getComputedStyle(document.querySelector('.v83-purple-flash')).display,popup:__v831PopupState().show,selection:getSelection().toString()};});
   assert.equal(end.dot.diameter,13);assert(end.dot.visible);assert.equal(end.dot.background,'rgba(166, 128, 222, 0.18)');assert.equal(end.border,'none');assert.equal(end.shadow,'none');assert.equal(end.glow,'none');assert(!end.popup);assert.equal(end.selection,'');assert(Math.abs(end.dx)<.02&&Math.abs(end.dy)<.02);
   assert.equal(end.dot.tag,await key.getAttribute('data-v83-sym'));
-  const native=await key.evaluate(e=>({select:getComputedStyle(e).userSelect,tap:getComputedStyle(e).webkitTapHighlightColor,focus:document.activeElement===e}));assert.equal(native.select,'none');assert(!native.focus);
+  const native=await key.evaluate(e=>({select:getComputedStyle(e).getPropertyValue("user-select")||getComputedStyle(e).getPropertyValue("-webkit-user-select"),tap:getComputedStyle(e).webkitTapHighlightColor,focus:document.activeElement===e}));assert.equal(native.select,'none');assert(!native.focus);
   if(label)await page.screenshot({path:`qa835/${name}-${width}-${label}-released.png`});
  }
  for(let i=0;i<28;i++)await press(vowels.nth(i),i===0?'normal':null);
