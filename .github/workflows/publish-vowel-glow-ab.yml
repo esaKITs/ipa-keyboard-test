@@ -1,0 +1,121 @@
+name: Test and publish vowel glow A/B prototypes
+on:
+  push:
+    branches: [work/vowel-v060-20261111]
+    paths:
+      - 'keyboard-v83-2-a/**'
+      - 'keyboard-v83-2-b/**'
+      - '.github/workflows/publish-vowel-glow-ab.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-vowel-glow-ab
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright
+      - run: npx playwright install chromium --with-deps
+      - name: Check circular glow appearance, popup, translation, complete hitbox regression
+        run: |
+          python3 -m http.server 8000 >/tmp/vowel-glow-server.log 2>&1 &
+          node <<'JS'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            for(const variant of ['a','b']){
+              for(const width of [390,1280]){
+                const page=await browser.newPage({viewport:{width,height:844}});
+                const errs=[];page.on('pageerror',e=>errs.push('host '+String(e)));
+                await page.goto('http://127.0.0.1:8000/keyboard-v83-2-'+variant+'/',{waitUntil:'load'});
+                const frame=page.frameLocator('#v83ChartFrame');
+                await frame.locator('.v83-ipa-key').first().waitFor();
+                const inner=page.frames().find(f=>f.url().includes('/keyboard-v83-2-'+variant+'/chart.html'));
+                inner.on('pageerror',e=>errs.push('chart '+String(e)));
+                const vowel=frame.locator('#vowelQuadrilateral .v83-ipa-key').first();
+                await vowel.scrollIntoViewIfNeeded();
+                const box=await vowel.boundingBox();
+                await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();
+                const feedback=await inner.evaluate(()=>{
+                  const el=document.querySelector('.v83-purple-flash'),pop=window.__v831PopupState();
+                  const s=getComputedStyle(el),r=el.getBoundingClientRect();
+                  return {display:s.display,width:r.width,height:r.height,radius:s.borderRadius,borderWidth:s.borderTopWidth,borderStyle:s.borderTopStyle,background:s.backgroundImage,popup:pop};
+                });
+                if(feedback.display!=='block'||feedback.width!==44||feedback.height!==44||feedback.radius!=='50%')throw Error('not a 44px circle '+variant+'/'+width+' '+JSON.stringify(feedback));
+                if(!feedback.background.includes('radial-gradient'))throw Error('missing soft glow '+variant+'/'+width);
+                if(variant==='a'&&feedback.borderStyle!=='none')throw Error('A must have no visible ring '+JSON.stringify(feedback));
+                if(variant==='b'&&feedback.borderStyle==='none')throw Error('B must have faint ring '+JSON.stringify(feedback));
+                if(!feedback.popup.show||feedback.popup.text!=='i')throw Error('popup not restored '+JSON.stringify(feedback));
+                await page.mouse.up();
+                if((await inner.evaluate(()=>window.__v831PopupState())).show)throw Error('popup persists');
+                const out=page.locator('#out');await out.fill('');
+                const old=await frame.locator('#chartScaleContent').evaluate(el=>el.outerHTML.includes('vowel-dynamic-glyph'));
+                if(!old)throw Error('original chart lost');
+                await vowel.click();
+                if(await out.inputValue()!=='i')throw Error('vowel failed');
+                for(const [locale,needle] of [['en','voiced bilabial approximant'],['pt-BR','aproximante bilabial vozeada'],['fa','تقریبی دولبی واکدار']]){
+                  await page.locator('#languageSelect').selectOption(locale);
+                  const text=await frame.locator('#diacritics').innerText();
+                  if(!text.includes(needle)||text.includes('有声両唇接近音'))throw Error('translation '+locale+' failed');
+                }
+                await page.locator('#languageSelect').selectOption('ja');
+                const total=await frame.locator('.v83-ipa-key').count();
+                if(total!==224)throw Error('missing click targets '+total);
+                for(let i=0;i<total;i++){
+                  const t=frame.locator('.v83-ipa-key').nth(i),sym=await t.getAttribute('data-v83-sym'),before=await out.inputValue();
+                  await t.click({timeout:2500});
+                  const after=await out.inputValue();
+                  if(after===before||!after.includes(sym))throw Error('misdirected click '+variant+'/'+width+' index='+i+' sym='+sym);
+                }
+                await frame.locator('#chartZoomOpen').click();
+                if(!await page.locator('#v83ChartFrame').evaluate(el=>el.classList.contains('zoom-fullscreen')))throw Error('zoom fullscreen');
+                await vowel.scrollIntoViewIfNeeded();
+                const zb=await vowel.boundingBox();
+                await page.mouse.move(zb.x+zb.width/2,zb.y+zb.height/2);await page.mouse.down();
+                const zv=await inner.evaluate(()=>({popup:window.__v831PopupState(),flash:getComputedStyle(document.querySelector('.v83-purple-flash')).borderRadius}));
+                if(!zv.popup.show||zv.flash!=='50%')throw Error('zoom circle/popup failure '+JSON.stringify(zv));
+                await page.mouse.up();await frame.locator('#zoomClose').click();
+                if(errs.length)throw Error(errs.join(' | '));
+                console.log('PASS variant='+variant+' width='+width+' keys='+total+' popup=true zoom=true locale=true circle='+JSON.stringify(feedback));
+                await page.close();
+              }
+            }
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+      - name: Package test site preserving existing versions
+        run: |
+          mkdir -p public
+          rsync -a --exclude=.git --exclude=.github --exclude=public --exclude=node_modules ./ public/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Check both published pages
+        run: |
+          for page in a b; do
+            url="https://esakits.github.io/ipa-keyboard-test/keyboard-v83-2-$page/"
+            found=0
+            for i in $(seq 1 20); do
+              if curl -fsSL "$url" -o /tmp/vowel-glow.html && curl -fsSL "${url}chart.html" -o /tmp/vowel-glow-chart.html && grep -q "83.2" /tmp/vowel-glow.html && grep -q "Vowels: 44px circular feedback" /tmp/vowel-glow-chart.html; then found=1;break;fi
+              sleep 5
+            done
+            if [ "$found" -ne 1 ];then echo "NOT LIVE: $url";exit 1;fi
+            echo "LIVE VERIFIED $url"
+          done
