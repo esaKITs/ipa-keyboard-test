@@ -24,11 +24,16 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  const vowels=f.locator('#vowelQuadrilateral .v83-ipa-key');
  async function screenPoint(key){
   await key.scrollIntoViewIfNeeded();
+  if(await page.locator('#v83ChartFrame').evaluate(e=>e.classList.contains('zoom-fullscreen'))){
+   await key.evaluate(e=>e.scrollIntoView({block:'center',inline:'center',behavior:'instant'}));
+   await f.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+  }
   if(!await page.locator('#v83ChartFrame').evaluate(e=>e.classList.contains('zoom-fullscreen'))){
    const r=await key.boundingBox(),bottom=await page.locator('.toolbar').evaluate(e=>e.getBoundingClientRect().bottom);
    if(r.y<bottom+40)await page.evaluate(delta=>window.scrollBy(0,delta),r.y-bottom-120);
   }
   const point=await key.evaluate(el=>{const r=el.getBoundingClientRect();for(const [fx,fy] of [[.5,.5],...Array.from({length:19},(_,y)=>Array.from({length:19},(_,x)=>[(x+1)/20,(y+1)/20])).flat()]){const x=r.left+r.width*fx,y=r.top+r.height*fy;if(document.elementFromPoint(x,y)?.closest('.v83-ipa-key')===el)return {x,y};}return null;});
+  if(!point){console.log('HIT_DIAGNOSTIC '+JSON.stringify(await key.evaluate(el=>{const r=el.getBoundingClientRect(),v=document.querySelector('#zoomViewport'),s=document.querySelector('.vowel-chart-svg');return {key:el.dataset.v83Sym,rect:r.toJSON(),view:v.getBoundingClientRect().toJSON(),svg:s.getBoundingClientRect().toJSON(),scroll:[v.scrollLeft,v.scrollTop],atCenter:document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.outerHTML.slice(0,500)};})));await page.screenshot({path:`qa835/${name}-${width}-hit-failure.png`});}
   assert(point,'No painted hit point '+await key.getAttribute('data-v83-sym'));
   const offset=await page.locator('#v83ChartFrame').boundingBox();
   const hit={x:offset.x+point.x,y:offset.y+point.y};
