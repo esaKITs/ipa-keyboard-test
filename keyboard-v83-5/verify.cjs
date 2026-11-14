@@ -28,7 +28,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
    const r=await key.boundingBox(),bottom=await page.locator('.toolbar').evaluate(e=>e.getBoundingClientRect().bottom);
    if(r.y<bottom+40)await page.evaluate(delta=>window.scrollBy(0,delta),r.y-bottom-120);
   }
-  const point=await key.evaluate(el=>{const r=el.getBoundingClientRect();for(const [fx,fy] of [[.5,.5],[.35,.5],[.65,.5],[.5,.35],[.5,.65],[.25,.25],[.75,.75]]){const x=r.left+r.width*fx,y=r.top+r.height*fy;if(document.elementFromPoint(x,y)?.closest('.v83-ipa-key')===el)return {x,y};}return null;});
+  const point=await key.evaluate(el=>{const r=el.getBoundingClientRect();for(const [fx,fy] of [[.5,.5],...Array.from({length:19},(_,y)=>Array.from({length:19},(_,x)=>[(x+1)/20,(y+1)/20])).flat()]){const x=r.left+r.width*fx,y=r.top+r.height*fy;if(document.elementFromPoint(x,y)?.closest('.v83-ipa-key')===el)return {x,y};}return null;});
   assert(point,'No painted hit point '+await key.getAttribute('data-v83-sym'));
   const offset=await page.locator('#v83ChartFrame').boundingBox();
   const hit={x:offset.x+point.x,y:offset.y+point.y};
@@ -65,7 +65,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  await out.fill('');
  for(let i=0;i<224;i++){
   const k=f.locator('.v83-ipa-key').nth(i),sym=await k.getAttribute('data-v83-sym'),before=await out.inputValue();
-  if(await k.evaluate(e=>!!e.closest('#vowelQuadrilateral')))await press(k);else await k.click({timeout:5000});assert.equal(await out.inputValue(),before+sym,`input ${name}/${width}/${i}/${sym}`);
+  if(await k.evaluate(e=>!!e.closest('#vowelQuadrilateral')))await press(k);else {const hp=await screenPoint(k);await page.mouse.click(hp.x,hp.y);}assert.equal(await out.inputValue(),before+sym,`input ${name}/${width}/${i}/${sym}`);
  }
  const beforeUndo=await out.inputValue();await page.locator('#undo').click();assert.notEqual(await out.inputValue(),beforeUndo);await page.locator('#redo').click();assert.equal(await out.inputValue(),beforeUndo);
  for(const [locale,needle] of [['en','voiced bilabial approximant'],['pt-BR','aproximante bilabial vozeada'],['fa','تقریبی دولبی واکدار'],['ja-osaka','有声両唇接近音'],['ja','有声両唇接近音']]){await page.locator('#languageSelect').selectOption(locale);await f.waitForFunction(v=>document.querySelector('#diacritics').textContent.includes(v),needle);}
