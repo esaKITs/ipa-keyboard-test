@@ -209,7 +209,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  const focus=await f.evaluate(()=>({key:document.activeElement?.classList.contains('v83-ipa-key'),outline:getComputedStyle(document.activeElement).outlineStyle}));assert(focus.key);assert.equal(focus.outline,'solid');
  const kbefore=await out.inputValue();await page.keyboard.press('Enter');assert.notEqual(await out.inputValue(),kbefore);
  await vowels.first().focus();await page.keyboard.press('Space');await page.waitForTimeout(345);assert.equal((await f.evaluate(()=>__v839DotState())).diameter,13);
- assert.deepEqual(errors,[]);console.log(`PASS ${name} ${width}: 235 shared glow/dot/popup checks and exact inputs; all 7 sections and note normal+zoom+touch; keyboard, locales, undo/redo, geometry, floating editor, inverse mode`);
+ assert.deepEqual(errors,[]);console.log(process.env.TEST_CASE?`PASS TARGETED ${name} ${width}: fullscreen restoration, floating editor, inverse mode, representative mouse/touch/keyboard inputs`:`PASS FULL ${name} ${width}: 235 shared glow/dot/popup checks and exact inputs; all 7 sections and note normal+zoom+touch; keyboard, locales, undo/redo, geometry, floating editor, inverse mode`);
  await page.close();
  }await browser.close();
 }
