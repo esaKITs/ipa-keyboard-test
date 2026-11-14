@@ -98,7 +98,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  await vowels.first().focus();await page.keyboard.press('Tab');
  const focus=await f.evaluate(()=>({key:document.activeElement?.classList.contains('v83-ipa-key'),outline:getComputedStyle(document.activeElement).outlineStyle}));assert(focus.key);assert.equal(focus.outline,'solid');
  const kbefore=await out.inputValue();await page.keyboard.press('Enter');assert.notEqual(await out.inputValue(),kbefore);
- await vowels.first().focus();await page.keyboard.press('Space');assert.equal((await f.evaluate(()=>__v836DotState())).diameter,13);
+ await vowels.first().focus();await page.keyboard.press('Space');await page.waitForTimeout(275);assert.equal((await f.evaluate(()=>__v836DotState())).diameter,13);
  assert.deepEqual(errors,[]);console.log(`PASS ${name} ${width}: 28 vowels normal+zoom, 224 exact inputs, touch, keyboard, locales, undo/redo, popup, geometry`);
  await page.close();
  }await browser.close();
