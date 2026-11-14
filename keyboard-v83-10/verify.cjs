@@ -2,6 +2,7 @@ const {chromium,webkit}=require('playwright');
 const assert=require('node:assert/strict');const fs=require('node:fs');
 const base=process.env.TEST_BASE||'http://127.0.0.1:8765/';
 fs.mkdirSync('qa8310',{recursive:true});
+async function chartFrame(p){await p.frameLocator('#v83ChartFrame').locator('.v83-ipa-key').first().waitFor();const h=await p.locator('#v83ChartFrame').elementHandle();return await h.contentFrame();}
 (async()=>{
 for(const [name,type] of Object.entries({chromium,webkit})){
  const browser=await type.launch({headless:true});
@@ -10,7 +11,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  const page=await browser.newPage({viewport:{width,height:844},hasTouch:true});
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  await page.goto(base+'keyboard-v83-10/',{waitUntil:'load'});
- let f=page.frames().find(f=>f.url().includes('/keyboard-v83-10/chart.html'));
+ let f=await chartFrame(page);
  await f.locator('.v83-ipa-key').first().waitFor();
  await f.evaluate(()=>document.fonts.ready);
  await f.waitForFunction(()=>document.querySelector('#vowelQuadrilateral .vowel-dynamic-glyph').style.fontSize==='32px');
@@ -19,13 +20,13 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  // Compare all hitboxes and complete SVG geometry against the untouched source.
  const source=await browser.newPage({viewport:{width,height:844}});
  await source.goto(base+'keyboard-v83-4/');
- const sf=source.frames().find(f=>f.url().includes('/keyboard-v83-4/chart.html'));
+ const sf=await chartFrame(source);
  await sf.locator('.v83-ipa-key').first().waitFor();await sf.evaluate(()=>document.fonts.ready);await sf.waitForFunction(()=>document.querySelector('#vowelQuadrilateral .vowel-dynamic-glyph').style.fontSize==='32px');
  const geometry=()=>({svg:document.querySelector('#vowelQuadrilateral').outerHTML,keys:[...document.querySelectorAll('.v83-ipa-key:not([data-v8310-added])')].map(e=>{let r=e.getBoundingClientRect();return [e.dataset.v83Sym,r.width,r.height,r.x,r.y]})});
  assert.deepEqual(await f.evaluate(geometry),await sf.evaluate(geometry));await source.close();
  const prior=await browser.newPage({viewport:{width,height:844}});
  await prior.goto(base+'keyboard-v83-7/');
- const pf=prior.frames().find(f=>f.url().includes('/keyboard-v83-7/chart.html'));
+ const pf=await chartFrame(prior);
  const pk=pf.locator('#vowelQuadrilateral .v83-ipa-key').first();
  await pk.scrollIntoViewIfNeeded();await pk.dispatchEvent('pointerdown',{pointerType:'touch'});
  const oldGap=await pk.evaluate(e=>e.getBoundingClientRect().top-document.querySelector('#v831SymbolPopup').getBoundingClientRect().bottom);
@@ -98,7 +99,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
   await cd.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cd.detach();
   assert((await panel.boundingBox()).y-before.y>50,'real touch drag moves editor');
  }
- const saved=await panel.boundingBox();await page.reload({waitUntil:'load'});f=page.frames().find(f=>f.url().includes('/keyboard-v83-10/chart.html'));vowels=f.locator('#vowelQuadrilateral .v83-ipa-key');await f.locator('.v83-ipa-key').first().waitFor();
+ const saved=await panel.boundingBox();await page.reload({waitUntil:'load'});f=await chartFrame(page);vowels=f.locator('#vowelQuadrilateral .v83-ipa-key');await f.locator('.v83-ipa-key').first().waitFor();
  await page.waitForFunction(()=>document.getElementById('floatingEditor').style.left!=='');
  assert(Math.abs((await panel.boundingBox()).y-saved.y)<2,'saved position survives reload');
  await page.setViewportSize({width,height:620});await page.waitForTimeout(80);
@@ -110,7 +111,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  assert.equal(await page.locator('html').getAttribute('data-inverse'),'true');
  assert.equal(await page.locator('#contrastToggle').getAttribute('aria-pressed'),'true');
  assert((await page.locator('#v83ChartFrame').evaluate(e=>getComputedStyle(e).filter)).includes('invert(1)'));
- await page.reload({waitUntil:'load'});f=page.frames().find(f=>f.url().includes('/keyboard-v83-10/chart.html'));vowels=f.locator('#vowelQuadrilateral .v83-ipa-key');await f.locator('.v83-ipa-key').first().waitFor();
+ await page.reload({waitUntil:'load'});f=await chartFrame(page);vowels=f.locator('#vowelQuadrilateral .v83-ipa-key');await f.locator('.v83-ipa-key').first().waitFor();
  assert.equal(await page.locator('html').getAttribute('data-inverse'),'true','inverse preference survives reload');
  await dragPanelTo(8,300);const inv=await panel.boundingBox();await page.evaluate(()=>scrollTo(0,200));
  assert(Math.abs((await panel.boundingBox()).y-inv.y)<.5,'inverse mode keeps panel fixed');
