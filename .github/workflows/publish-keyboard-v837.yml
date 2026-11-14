@@ -1,0 +1,58 @@
+name: Verify and publish IPA Keyboard v83.7
+on:
+  push:
+    branches: [work/vowel-v060-20261111]
+    paths: ['keyboard-v83-7/**', '.github/workflows/publish-keyboard-v837.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-v837
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.61.1
+      - run: npx playwright install chromium webkit --with-deps
+      - name: Chromium and WebKit complete browser verification
+        run: |
+          python3 -m http.server 8765 >/tmp/ipa837-http.log 2>&1 &
+          node keyboard-v83-7/verify.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa837-screenshots
+          path: qa837/
+      - name: Preserve all existing site versions
+        run: |
+          mkdir public
+          rsync -a --exclude=.git --exclude=.github --exclude=public --exclude=node_modules --exclude=qa837 ./ public/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}keyboard-v83-7/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Confirm public v83.7
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsSL https://esakits.github.io/ipa-keyboard-test/keyboard-v83-7/ -o /tmp/v837.html && curl -fsSL https://esakits.github.io/ipa-keyboard-test/keyboard-v83-7/chart.html -o /tmp/v837chart.html && grep -q '83.7 IPA Keyboard TEST' /tmp/v837.html && grep -q '26px feathered feedback' /tmp/v837chart.html; then
+              echo 'Public v83.7 confirmed'
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
