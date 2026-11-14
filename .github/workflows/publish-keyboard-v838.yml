@@ -1,7 +1,7 @@
 name: Verify and publish IPA Keyboard v83.8
 on:
   push:
-    branches: [work/popup-v83-8]
+    branches: [work/vowel-v060-20261111]
     paths: ['keyboard-v83-8/**', '.github/workflows/publish-keyboard-v838.yml']
   workflow_dispatch:
 permissions:
