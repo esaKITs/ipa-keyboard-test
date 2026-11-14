@@ -44,21 +44,27 @@ for(const [name,type] of Object.entries({chromium,webkit})){
   const y=r.y+r.height/2<422?844-p.height-8:8;
   if(Math.abs(p.y-y)>1)await dragPanelTo(p.x,y);
  }
+
  async function screenPoint(key){
-  await key.scrollIntoViewIfNeeded();
-  if(await page.locator('#v83ChartFrame').evaluate(e=>e.classList.contains('zoom-fullscreen'))){
-   await key.evaluate(e=>e.scrollIntoView({block:'center',inline:'center',behavior:'instant'}));
+  let point=null;
+  for(let attempt=0;attempt<3&&!point;attempt++){
+   await key.scrollIntoViewIfNeeded();
+   if(await page.locator('#v83ChartFrame').evaluate(e=>e.classList.contains('zoom-fullscreen')))await key.evaluate(e=>e.scrollIntoView({block:'center',inline:'center',behavior:'instant'}));
    await f.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+   await parkPanel(key);
+   point=await key.evaluate(el=>{
+    const r=el.getBoundingClientRect(),fr=window.frameElement.getBoundingClientRect();
+    for(const [fx,fy]of [[.5,.5],...Array.from({length:19},(_,y)=>Array.from({length:19},(_,x)=>[(x+1)/20,(y+1)/20])).flat()]){
+     const x=Math.round(r.left+r.width*fx+fr.left)-fr.left,y=Math.round(r.top+r.height*fy+fr.top)-fr.top;
+     if(document.elementFromPoint(x,y)?.closest('.v83-ipa-key')===el&&parent.document.elementFromPoint(fr.left+x,fr.top+y)===window.frameElement)return{x:fr.left+x,y:fr.top+y};
+    }return null;
+   });
   }
-  await parkPanel(key);
-  const point=await key.evaluate(el=>{
-   const r=el.getBoundingClientRect(),fr=window.frameElement.getBoundingClientRect();
-   for(const [fx,fy]of [[.5,.5],...Array.from({length:19},(_,y)=>Array.from({length:19},(_,x)=>[(x+1)/20,(y+1)/20])).flat()]){
-    const x=Math.round(r.left+r.width*fx+fr.left)-fr.left,y=Math.round(r.top+r.height*fy+fr.top)-fr.top;
-    if(document.elementFromPoint(x,y)?.closest('.v83-ipa-key')===el&&parent.document.elementFromPoint(fr.left+x,fr.top+y)===window.frameElement)return{x:fr.left+x,y:fr.top+y};
-   }return null;
-  });
-  assert(point,'No unobscured physical point for '+await key.getAttribute('data-v83-sym'));
+  if(!point){
+   const state=await key.evaluate(el=>{const r=el.getBoundingClientRect(),fr=frameElement.getBoundingClientRect();return{key:el.dataset.v83Sym,rect:r.toJSON(),frame:fr.toJSON(),inner:[innerWidth,innerHeight,scrollX,scrollY],innerTarget:document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.outerHTML.slice(0,400),outerTarget:parent.document.elementFromPoint(fr.left+r.left+r.width/2,fr.top+r.top+r.height/2)?.outerHTML.slice(0,400),editor:parent.document.getElementById('floatingEditor').getBoundingClientRect().toJSON()};});
+   await page.screenshot({path:`qa8310/${name}-${width}-nohit.png`});
+   throw Error('No unobscured physical point '+JSON.stringify(state));
+  }
   return point;
  }
  // Editor is a real fixed overlay: mouse/touch/keyboard movement, caret and text preservation.
@@ -185,7 +191,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  await dragPanelTo(8,844-(await panel.boundingBox()).height-8);await f.locator('#zoomMinus').click();await press(vowels.last());
  await dragPanelTo(8,844-(await panel.boundingBox()).height-8);await f.locator('#zoomRange').fill('100');await press(vowels.first());
  await dragPanelTo(8,844-(await panel.boundingBox()).height-8);await f.locator('#zoomMapToggle').click();assert(await f.locator('#zoomMinimap').isVisible());
- await f.locator('#zoomClose').click();await page.waitForFunction(()=>!document.querySelector('#v83ChartFrame').classList.contains('zoom-fullscreen'));await press(vowels.last());
+ await f.locator('#zoomClose').click();await page.waitForFunction(()=>!document.querySelector('#v83ChartFrame').classList.contains('zoom-fullscreen'));await f.waitForFunction(()=>document.getElementById('chartZoomDialog').hidden);await f.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await press(vowels.last());
  // A touch tap also produces input and the residual dot without a native selection.
  const touchTargets=[];
  for(const id of sections)touchTargets.push(f.locator('#'+id+' .v83-ipa-key').first(),f.locator('#'+id+' .v83-ipa-key').last());
