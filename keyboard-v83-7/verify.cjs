@@ -52,9 +52,9 @@ for(const [name,type] of Object.entries({chromium,webkit})){
    const target=[...a].find(e=>e.dataset.v83Sym===p.text);if(!target)throw Error('Popup not shown: '+JSON.stringify(p));const t=target.getBoundingClientRect();
    return {w:r.width,h:r.height,dx:r.x+r.width/2-t.x-t.width/2,dy:r.y+r.height/2-t.y-t.height/2,display:s.display,bg:s.backgroundImage,border:s.borderStyle,shadow:s.boxShadow,dot:getComputedStyle(d).display,p};
   });
-  assert.equal(state.w,26);assert.equal(state.h,26);assert(Math.abs(state.dx)<.02&&Math.abs(state.dy)<.02);assert.equal(state.display,'block');assert.equal(state.dot,'none');assert.equal(state.border,'none');assert.equal(state.shadow,'none');assert(state.bg.includes('radial-gradient')&&state.bg.includes('166, 128, 222'),JSON.stringify(state));assert(state.p.show);
+  assert(state.w>=12.5&&state.w<=26.1,'growing glow width '+state.w);assert(state.h>=12.5&&state.h<=26.1,'growing glow height '+state.h);assert(Math.abs(state.dx)<.02&&Math.abs(state.dy)<.02);assert.equal(state.display,'block');assert.equal(state.dot,'none');assert.equal(state.border,'none');assert.equal(state.shadow,'none');assert(state.bg.includes('radial-gradient')&&state.bg.includes('166, 128, 222'),JSON.stringify(state));assert(state.p.show);
   // Grow animation must expand from a 13px visual core to full 26px, without a step change.
-  if(label){await page.waitForTimeout(260);const expanded=await f.locator('.v83-purple-flash').evaluate(el=>({transform:getComputedStyle(el).transform,opacity:Number(getComputedStyle(el).opacity)}));assert(expanded.opacity>.95,'glow reaches full opacity');}
+  if(label){await page.waitForTimeout(260);const expanded=await f.locator('.v83-purple-flash').evaluate(el=>({transform:getComputedStyle(el).transform,opacity:Number(getComputedStyle(el).opacity)}));assert(expanded.opacity>.95,'glow reaches full opacity');const fullWidth=await f.locator('.v83-purple-flash').evaluate(el=>el.getBoundingClientRect().width);assert(Math.abs(fullWidth-26)<.2,'glow grows to 26px: '+fullWidth);}
   if(label)await page.screenshot({path:`qa837/${name}-${width}-${label}-held.png`});
   // The glow must last throughout a held press rather than expire at 420ms.
   if(label){await page.waitForTimeout(500);assert.equal(await f.locator('.v83-purple-flash').evaluate(e=>getComputedStyle(e).display),'block');}
