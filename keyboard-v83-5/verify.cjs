@@ -23,12 +23,16 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  assert.deepEqual(await f.evaluate(geometry),await sf.evaluate(geometry));await source.close();
  const vowels=f.locator('#vowelQuadrilateral .v83-ipa-key');
  async function press(key,label){
+  console.log('PRESS '+name+'/'+width+'/'+await key.getAttribute('data-v83-sym'));
   await key.scrollIntoViewIfNeeded();const r=await key.boundingBox();
-  await page.mouse.move(r.x+r.width/2,r.y+r.height/2);await page.mouse.down();
+  const point=await key.evaluate(el=>{const r=el.getBoundingClientRect();for(const [fx,fy] of [[.5,.5],[.35,.5],[.65,.5],[.5,.35],[.5,.65],[.25,.25],[.75,.75]]){const x=r.left+r.width*fx,y=r.top+r.height*fy;if(document.elementFromPoint(x,y)?.closest('.v83-ipa-key')===el)return {x,y};}return null;});
+  assert(point,'No painted hit point '+await key.getAttribute('data-v83-sym'));
+  const offset=await page.locator('#v83ChartFrame').boundingBox();
+  await page.mouse.move(offset.x+point.x,offset.y+point.y);await page.mouse.down();
   const state=await f.evaluate(()=>{
    const g=document.querySelector('.v83-purple-flash'),d=document.querySelector('#v834SelectedVowelDot'),p=__v831PopupState();
    const r=g.getBoundingClientRect(),s=getComputedStyle(g),a=document.querySelectorAll('#vowelQuadrilateral .v83-ipa-key');
-   const target=[...a].find(e=>e.dataset.v83Sym===p.text),t=target.getBoundingClientRect();
+   const target=[...a].find(e=>e.dataset.v83Sym===p.text);if(!target)throw Error('Popup not shown: '+JSON.stringify(p));const t=target.getBoundingClientRect();
    return {w:r.width,h:r.height,dx:r.x+r.width/2-t.x-t.width/2,dy:r.y+r.height/2-t.y-t.height/2,display:s.display,bg:s.backgroundImage,border:s.borderStyle,shadow:s.boxShadow,dot:getComputedStyle(d).display,p};
   });
   assert.equal(state.w,26);assert.equal(state.h,26);assert(Math.abs(state.dx)<.02&&Math.abs(state.dy)<.02);assert.equal(state.display,'block');assert.equal(state.dot,'none');assert.equal(state.border,'none');assert.equal(state.shadow,'none');assert(state.bg.includes('radial-gradient')&&state.bg.includes('166, 128, 222'));assert(state.p.show);

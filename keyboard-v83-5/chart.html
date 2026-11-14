@@ -791,7 +791,7 @@ body{padding:8px!important;overflow-x:hidden!important}
 .v83-ipa-key{cursor:pointer!important;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .v83-ipa-key:focus-visible{outline:2px solid #9879d3!important;outline-offset:1px}
 /* Vowel SVG is not a browser text-selection target: prevent Safari's blue focus/selection rectangle.
-   Keyboard navigation retains an accessible soft circular indication rather than a squared outline. */
+   Keyboard navigation retains the visible lavender focus indicator. */
 #vowelQuadrilateral,#vowelQuadrilateral *{
  -webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;
  -webkit-tap-highlight-color:transparent!important;
@@ -1903,6 +1903,8 @@ function selectVowel(el){
 window.__v834DotState=()=>({visible:getComputedStyle(selectedDot).display!=='none',diameter:selectedDot.getBoundingClientRect().width,background:getComputedStyle(selectedDot).backgroundColor,tag:selectedVowel?.dataset.v83Sym||null});
 window.addEventListener('resize',repositionSelectedDot);
 window.addEventListener('scroll',repositionSelectedDot,true);
+// Zoom transforms change screen coordinates without resizing the glyph itself.
+new MutationObserver(()=>requestAnimationFrame(repositionSelectedDot)).observe(document.getElementById('chartScaleContent'),{attributes:true,attributeFilter:['style']});
 
 const popup=document.createElement('div');popup.className='v831-symbol-popup';popup.id='v831SymbolPopup';popup.setAttribute('aria-hidden','true');document.body.appendChild(popup);
 let popupActive=null;
