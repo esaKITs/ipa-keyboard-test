@@ -97,6 +97,9 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  await dragPanelTo(8,300);const inv=await panel.boundingBox();await page.evaluate(()=>scrollTo(0,200));
  assert(Math.abs((await panel.boundingBox()).y-inv.y)<.5,'inverse mode keeps panel fixed');
  await page.screenshot({path:`qa8310/${name}-${width}-inverse-editor.png`});
+ const inverseKey=f.locator('#pulmonicConsonants .v83-ipa-key').first(),ip=await screenPoint(inverseKey);
+ await page.touchscreen.tap(ip.x,ip.y);await page.waitForTimeout(350);
+ assert.equal(await page.locator('#out').inputValue(),'p','chart touch input works in inverse mode');
  await page.locator('#contrastToggle').click();
  assert.equal(await page.locator('html').getAttribute('data-inverse'),'false');
  const controls=await panel.evaluate(e=>{const p=e.getBoundingClientRect();return[...e.querySelectorAll('.main-controls button')].every(b=>{const r=b.getBoundingClientRect();return r.left>=p.left&&r.right<=p.right&&r.top>=p.top&&r.bottom<=p.bottom;});});
