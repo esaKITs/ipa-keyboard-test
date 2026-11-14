@@ -70,9 +70,11 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  const beforeUndo=await out.inputValue();await page.locator('#undo').click();assert.notEqual(await out.inputValue(),beforeUndo);await page.locator('#redo').click();assert.equal(await out.inputValue(),beforeUndo);
  for(const [locale,needle] of [['en','voiced bilabial approximant'],['pt-BR','aproximante bilabial vozeada'],['fa','تقریبی دولبی واکدار'],['ja-osaka','有声両唇接近音'],['ja','有声両唇接近音']]){await page.locator('#languageSelect').selectOption(locale);await f.waitForFunction(v=>document.querySelector('#diacritics').textContent.includes(v),needle);}
  await f.locator('#chartZoomOpen').click();await page.waitForFunction(()=>document.querySelector('#v83ChartFrame').classList.contains('zoom-fullscreen'));
+ await f.locator('#zoomMapToggle').click();assert(await f.locator('#zoomMinimap').isHidden());
  await f.locator('#zoomPlus').click();for(let i=0;i<28;i++)await press(vowels.nth(i),i===0?'zoom':null);
  await f.locator('#zoomMinus').click();await press(vowels.last());
  await f.locator('#zoomRange').fill('100');await press(vowels.first());
+ await f.locator('#zoomMapToggle').click();assert(await f.locator('#zoomMinimap').isVisible());
  await f.locator('#zoomClose').click();await page.waitForFunction(()=>!document.querySelector('#v83ChartFrame').classList.contains('zoom-fullscreen'));await press(vowels.last());
  // A touch tap also produces input and the residual dot without a native selection.
  const touchPoint=await screenPoint(vowels.first());await page.touchscreen.tap(touchPoint.x,touchPoint.y);await f.waitForFunction(()=>__v834DotState().tag==='i',{timeout:3000});assert.equal((await f.evaluate(()=>__v834DotState())).tag,'i');
