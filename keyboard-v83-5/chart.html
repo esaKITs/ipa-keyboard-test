@@ -1956,7 +1956,7 @@ function flashHit(el){
   const diameter=26;
   const centerX=a.left+a.width/2,centerY=a.top+a.height/2;
   const x=centerX-diameter/2,y=centerY-diameter/2;
-  const paint='background:radial-gradient(circle,rgba(166,128,222,.20) 0%,rgba(166,128,222,.12) 38%,rgba(166,128,222,.05) 68%,rgba(166,128,222,0) 100%);border:0;box-shadow:none;';
+  const paint='background:radial-gradient(circle closest-side,rgba(166,128,222,.20) 0%,rgba(166,128,222,.12) 38%,rgba(166,128,222,.05) 68%,rgba(166,128,222,0) 100%);border:0;box-shadow:none;';
   clearTimeout(flashTimer);
   flash.style.cssText='position:fixed;z-index:2147483647;pointer-events:none;display:block;box-sizing:border-box;border-radius:50%;width:'+diameter+'px;height:'+diameter+'px;left:'+x+'px;top:'+y+'px;'+paint;
   return;
