@@ -102,6 +102,15 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  const controls=await panel.evaluate(e=>{const p=e.getBoundingClientRect();return[...e.querySelectorAll('.main-controls button')].every(b=>{const r=b.getBoundingClientRect();return r.left>=p.left&&r.right<=p.right&&r.top>=p.top&&r.bottom<=p.bottom;});});
  assert(controls,'all editor controls fit inside the panel');
 
+
+ // Selecting and replacing a known middle range must survive moving the panel.
+ await page.locator('#out').fill('abcd');
+ await page.locator('#out').evaluate(e=>{e.focus();e.setSelectionRange(1,3);e.dispatchEvent(new Event('select'));});
+ await dragPanelTo(8,300);
+ const editKey=f.locator('#pulmonicConsonants .v83-ipa-key').first(),ep=await screenPoint(editKey);
+ await page.touchscreen.tap(ep.x,ep.y);await page.waitForTimeout(350);
+ assert.equal(await page.locator('#out').inputValue(),'apd','moving editor preserves the selected replacement range');
+ await page.locator('#out').fill('');
  // A floating editor just above a key must not displace its popup far away.
  const obstacleKey=f.locator('#diacritics .v83-ipa-key').first();
  await obstacleKey.scrollIntoViewIfNeeded();let kr=await obstacleKey.boundingBox();
@@ -177,7 +186,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  touchTargets.push(vowels.first(),vowels.first());
  for(const touchKey of touchTargets){
   const sym=await touchKey.getAttribute('data-v83-sym'),before=await out.inputValue(),touchPoint=await screenPoint(touchKey);
-  const caret=await out.evaluate(e=>({start:e.selectionStart,end:e.selectionEnd}));
+  const caret=await page.evaluate(()=>esaChartSelection());
   await page.touchscreen.tap(touchPoint.x,touchPoint.y);
   await f.waitForFunction(v=>__v839DotState().tag===v,sym,{timeout:3000});
   await page.waitForTimeout(350);

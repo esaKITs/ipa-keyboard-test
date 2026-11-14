@@ -358,6 +358,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #floatingEditor.input-panel-compact .clear-separator{display:none}
 #floatingEditor.input-panel-compact #status{grid-column:1/-1}
 #floatingEditor.input-panel-compact #status:empty{display:none}
+#floatingEditor .main-controls{flex-wrap:wrap}
 #floatingEditor .settings-panel{position:static;width:100%;margin:8px 0 0}
 #floatingEditor .settings-panel::before{display:none}
 body.input-panel-dragging,body.input-panel-dragging *{cursor:grabbing!important;-webkit-user-select:none!important;user-select:none!important}
@@ -473,7 +474,9 @@ function insertText(s,btn){
  /* Chart input must not focus the textarea: focusing summons the iPhone keyboard. */
  out.setRangeText(s,a,b,'end');
  savedStart=savedEnd=a+s.length;
+ out.setSelectionRange(savedStart,savedEnd);
  snapshot();grow();
+ if(savedEnd===out.value.length)out.scrollTop=out.scrollHeight;
  resetDiaPositionAfterUse(originalSym);
  if(btn&&!isVowelKey(btn)){btn.classList.add('click-flash');setTimeout(function(){btn.classList.remove('click-flash');},420);}
 }
@@ -595,6 +598,7 @@ byId('offlineInfoBtn').addEventListener('click',function(){openInfo('offlineInfo
 Array.prototype.forEach.call(document.querySelectorAll('[data-close-dialog]'),function(b){b.addEventListener('click',function(){var d=b.closest('dialog');if(d)d.close();});});
 if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){});});}
 grow();remember();
+window.esaChartSelection=function(){return {start:savedStart,end:savedEnd};};
 window.esaChartInsert=function(sym){
  if(typeof sym!=='string'||sym.length<1||sym.length>24)return false;
  insertText(sym,null);
