@@ -67,6 +67,9 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  const initial=await panel.boundingBox();
  await dragPanelTo(8,300);
  assert(Math.abs((await panel.boundingBox()).y-initial.y)>20,'panel moves');
+ const horizontal=await panel.boundingBox();await dragPanelTo(width-horizontal.width-8,300);
+ assert(Math.abs((await panel.boundingBox()).x-(width-horizontal.width-8))<1,'editor moves horizontally within the screen');
+ await dragPanelTo(8,300);
  assert.equal(await page.locator('#out').inputValue(),'ai');assert.equal(await page.locator('#out').evaluate(e=>e.selectionStart),1,'drag preserves caret');
  const fixed=await panel.boundingBox();await page.evaluate(()=>scrollTo(0,200));
  assert(Math.abs((await panel.boundingBox()).y-fixed.y)<.5,'editor remains fixed during page scroll');

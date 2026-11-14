@@ -716,7 +716,7 @@ function bounds(){
 function place(){
  const b=bounds();
  panel.style.setProperty('--panel-vh',(b.h+16)+'px');
- const width=Math.min(480,b.w);panel.style.width=width+'px';panel.classList.toggle('input-panel-compact',width<450);
+ const width=Math.min(b.w,b.w>700?480:Math.min(360,b.w*.86));panel.style.width=width+'px';panel.classList.toggle('input-panel-compact',width<450);
  const r=panel.getBoundingClientRect(),dx=Math.max(0,b.w-r.width),dy=Math.max(0,b.h-r.height);
  const x=position?b.x+position.x*dx:b.x+((b.w>700)?dx:0);
  const y=position?b.y+position.y*dy:b.y+((b.w>700)?Math.min(102,dy):dy);
