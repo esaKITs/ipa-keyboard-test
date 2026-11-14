@@ -22,13 +22,19 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  const geometry=()=>({svg:document.querySelector('#vowelQuadrilateral').outerHTML,keys:[...document.querySelectorAll('.v83-ipa-key')].map(e=>{let r=e.getBoundingClientRect();return [e.dataset.v83Sym,r.width,r.height,r.x,r.y]})});
  assert.deepEqual(await f.evaluate(geometry),await sf.evaluate(geometry));await source.close();
  const vowels=f.locator('#vowelQuadrilateral .v83-ipa-key');
- async function press(key,label){
-  console.log('PRESS '+name+'/'+width+'/'+await key.getAttribute('data-v83-sym'));
-  await key.scrollIntoViewIfNeeded();const r=await key.boundingBox();
+ async function screenPoint(key){
+  await key.scrollIntoViewIfNeeded();
   const point=await key.evaluate(el=>{const r=el.getBoundingClientRect();for(const [fx,fy] of [[.5,.5],[.35,.5],[.65,.5],[.5,.35],[.5,.65],[.25,.25],[.75,.75]]){const x=r.left+r.width*fx,y=r.top+r.height*fy;if(document.elementFromPoint(x,y)?.closest('.v83-ipa-key')===el)return {x,y};}return null;});
   assert(point,'No painted hit point '+await key.getAttribute('data-v83-sym'));
   const offset=await page.locator('#v83ChartFrame').boundingBox();
-  await page.mouse.move(offset.x+point.x,offset.y+point.y);await page.mouse.down();
+  return {x:offset.x+point.x,y:offset.y+point.y};
+
+ }
+ async function press(key,label){
+  console.log('PRESS '+name+'/'+width+'/'+await key.getAttribute('data-v83-sym'));
+  await key.scrollIntoViewIfNeeded();const r=await key.boundingBox();
+  const hit=await screenPoint(key);
+  await page.mouse.move(hit.x,hit.y);await page.mouse.down();
   const state=await f.evaluate(()=>{
    const g=document.querySelector('.v83-purple-flash'),d=document.querySelector('#v834SelectedVowelDot'),p=__v831PopupState();
    const r=g.getBoundingClientRect(),s=getComputedStyle(g),a=document.querySelectorAll('#vowelQuadrilateral .v83-ipa-key');
@@ -53,7 +59,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  await out.fill('');
  for(let i=0;i<224;i++){
   const k=f.locator('.v83-ipa-key').nth(i),sym=await k.getAttribute('data-v83-sym'),before=await out.inputValue();
-  await k.click({timeout:5000});assert.equal(await out.inputValue(),before+sym,`input ${name}/${width}/${i}/${sym}`);
+  if(await k.evaluate(e=>!!e.closest('#vowelQuadrilateral')))await press(k);else await k.click({timeout:5000});assert.equal(await out.inputValue(),before+sym,`input ${name}/${width}/${i}/${sym}`);
  }
  const beforeUndo=await out.inputValue();await page.locator('#undo').click();assert.notEqual(await out.inputValue(),beforeUndo);await page.locator('#redo').click();assert.equal(await out.inputValue(),beforeUndo);
  for(const [locale,needle] of [['en','voiced bilabial approximant'],['pt-BR','aproximante bilabial vozeada'],['fa','تقریبی دولبی واکدار'],['ja-osaka','有声両唇接近音'],['ja','有声両唇接近音']]){await page.locator('#languageSelect').selectOption(locale);await f.waitForFunction(v=>document.querySelector('#diacritics').textContent.includes(v),needle);}
@@ -63,7 +69,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  await f.locator('#zoomRange').fill('100');await press(vowels.first());
  await f.locator('#zoomClose').click();await page.waitForFunction(()=>!document.querySelector('#v83ChartFrame').classList.contains('zoom-fullscreen'));await press(vowels.last());
  // A touch tap also produces input and the residual dot without a native selection.
- await vowels.first().tap();assert.equal((await f.evaluate(()=>__v834DotState())).tag,'i');
+ const touchPoint=await screenPoint(vowels.first());await page.touchscreen.tap(touchPoint.x,touchPoint.y);assert.equal((await f.evaluate(()=>__v834DotState())).tag,'i');
  // Native keyboard focus remains visibly outlined; Enter and Space still insert.
  await vowels.first().focus();await page.keyboard.press('Tab');
  const focus=await f.evaluate(()=>({key:document.activeElement?.classList.contains('v83-ipa-key'),outline:getComputedStyle(document.activeElement).outlineStyle}));assert(focus.key);assert.equal(focus.outline,'solid');
