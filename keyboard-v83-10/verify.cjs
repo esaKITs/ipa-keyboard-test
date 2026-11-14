@@ -50,6 +50,10 @@ for(const [name,type] of Object.entries({chromium,webkit})){
   for(let attempt=0;attempt<3&&!point;attempt++){
    await key.scrollIntoViewIfNeeded();
    if(await page.locator('#v83ChartFrame').evaluate(e=>e.classList.contains('zoom-fullscreen')))await key.evaluate(e=>e.scrollIntoView({block:'center',inline:'center',behavior:'instant'}));
+   else{
+    const r=await key.boundingBox();
+    if(r.y<8||r.y+r.height>836)await page.evaluate(d=>window.scrollBy({top:d,left:0,behavior:'instant'}),r.y+r.height/2-422);
+   }
    await f.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
    await parkPanel(key);
    point=await key.evaluate(el=>{
