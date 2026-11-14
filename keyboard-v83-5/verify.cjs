@@ -24,10 +24,16 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  const vowels=f.locator('#vowelQuadrilateral .v83-ipa-key');
  async function screenPoint(key){
   await key.scrollIntoViewIfNeeded();
+  if(!await page.locator('#v83ChartFrame').evaluate(e=>e.classList.contains('zoom-fullscreen'))){
+   const r=await key.boundingBox(),bottom=await page.locator('.toolbar').evaluate(e=>e.getBoundingClientRect().bottom);
+   if(r.y<bottom+40)await page.evaluate(delta=>window.scrollBy(0,delta),r.y-bottom-120);
+  }
   const point=await key.evaluate(el=>{const r=el.getBoundingClientRect();for(const [fx,fy] of [[.5,.5],[.35,.5],[.65,.5],[.5,.35],[.5,.65],[.25,.25],[.75,.75]]){const x=r.left+r.width*fx,y=r.top+r.height*fy;if(document.elementFromPoint(x,y)?.closest('.v83-ipa-key')===el)return {x,y};}return null;});
   assert(point,'No painted hit point '+await key.getAttribute('data-v83-sym'));
   const offset=await page.locator('#v83ChartFrame').boundingBox();
-  return {x:offset.x+point.x,y:offset.y+point.y};
+  const hit={x:offset.x+point.x,y:offset.y+point.y};
+  assert(await page.evaluate(p=>document.elementFromPoint(p.x,p.y)?.id==='v83ChartFrame',hit),'Target obscured by host toolbar');
+  return hit;
 
  }
  async function press(key,label){
@@ -69,7 +75,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  await f.locator('#zoomRange').fill('100');await press(vowels.first());
  await f.locator('#zoomClose').click();await page.waitForFunction(()=>!document.querySelector('#v83ChartFrame').classList.contains('zoom-fullscreen'));await press(vowels.last());
  // A touch tap also produces input and the residual dot without a native selection.
- const touchPoint=await screenPoint(vowels.first());await page.touchscreen.tap(touchPoint.x,touchPoint.y);assert.equal((await f.evaluate(()=>__v834DotState())).tag,'i');
+ const touchPoint=await screenPoint(vowels.first());await page.touchscreen.tap(touchPoint.x,touchPoint.y);await f.waitForFunction(()=>__v834DotState().tag==='i',{timeout:3000});assert.equal((await f.evaluate(()=>__v834DotState())).tag,'i');
  // Native keyboard focus remains visibly outlined; Enter and Space still insert.
  await vowels.first().focus();await page.keyboard.press('Tab');
  const focus=await f.evaluate(()=>({key:document.activeElement?.classList.contains('v83-ipa-key'),outline:getComputedStyle(document.activeElement).outlineStyle}));assert(focus.key);assert.equal(focus.outline,'solid');
