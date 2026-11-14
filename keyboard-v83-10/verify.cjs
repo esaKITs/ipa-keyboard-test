@@ -40,7 +40,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
   await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
  }
  async function parkPanel(key){
-  const r=await key.boundingBox(),p=await panel.boundingBox();
+  const r=await key.evaluate(e=>{const r=e.getBoundingClientRect(),f=frameElement.getBoundingClientRect();return{y:r.top+f.top,height:r.height};}),p=await panel.boundingBox();
   const y=r.y+r.height/2<422?844-p.height-8:8;
   if(Math.abs(p.y-y)>1)await dragPanelTo(p.x,y);
  }
@@ -51,8 +51,13 @@ for(const [name,type] of Object.entries({chromium,webkit})){
    await key.scrollIntoViewIfNeeded();
    if(await page.locator('#v83ChartFrame').evaluate(e=>e.classList.contains('zoom-fullscreen')))await key.evaluate(e=>e.scrollIntoView({block:'center',inline:'center',behavior:'instant'}));
    else{
-    const r=await key.boundingBox();
-    if(r.y<8||r.y+r.height>836)await page.evaluate(d=>window.scrollBy({top:d,left:0,behavior:'instant'}),r.y+r.height/2-422);
+    const r=await key.evaluate(e=>{const r=e.getBoundingClientRect(),f=frameElement.getBoundingClientRect();return{y:r.top+f.top,height:r.height};});
+    if(r.y<8||r.y+r.height>836){
+     const before=await page.evaluate(()=>({y:scrollY,height:document.scrollingElement.scrollHeight,overflow:getComputedStyle(document.body).overflow}));
+     await page.evaluate(d=>window.scrollBy(0,d),r.y+r.height/2-422);
+     const after=await page.evaluate(()=>({y:scrollY,height:document.scrollingElement.scrollHeight,overflow:getComputedStyle(document.body).overflow}));
+     console.log('HOST_SCROLL '+name+'/'+width+' '+JSON.stringify({target:r,before,after}));
+    }
    }
    await f.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
    await parkPanel(key);
@@ -65,7 +70,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
    });
   }
   if(!point){
-   const state=await key.evaluate(el=>{const r=el.getBoundingClientRect(),fr=frameElement.getBoundingClientRect();return{key:el.dataset.v83Sym,rect:r.toJSON(),frame:fr.toJSON(),inner:[innerWidth,innerHeight,scrollX,scrollY],innerTarget:document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.outerHTML.slice(0,400),outerTarget:parent.document.elementFromPoint(fr.left+r.left+r.width/2,fr.top+r.top+r.height/2)?.outerHTML.slice(0,400),editor:parent.document.getElementById('floatingEditor').getBoundingClientRect().toJSON()};});
+   const state=await key.evaluate(el=>{const r=el.getBoundingClientRect(),fr=frameElement.getBoundingClientRect();return{key:el.dataset.v83Sym,rect:r.toJSON(),frame:fr.toJSON(),inner:[innerWidth,innerHeight,scrollX,scrollY],innerTarget:document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.outerHTML.slice(0,400),outerTarget:parent.document.elementFromPoint(fr.left+r.left+r.width/2,fr.top+r.top+r.height/2)?.outerHTML.slice(0,400),editor:parent.document.getElementById('floatingEditor').getBoundingClientRect().toJSON(),parentWindow:{y:parent.scrollY,height:parent.document.scrollingElement.scrollHeight,overflow:getComputedStyle(parent.document.body).overflow}};});
    await page.screenshot({path:`qa8310/${name}-${width}-nohit.png`});
    throw Error('No unobscured physical point '+JSON.stringify(state));
   }
