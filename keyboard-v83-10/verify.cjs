@@ -87,6 +87,21 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  let bounded=await panel.boundingBox();assert(bounded.x>=7&&bounded.y>=7&&bounded.x+bounded.width<=width-7&&bounded.y+bounded.height<=613,'resized panel stays within screen');
  await page.setViewportSize({width,height:844});await page.waitForTimeout(80);
  await page.locator('#inputPanelReset').click();assert.equal(await page.evaluate(()=>localStorage.getItem('esakits.ipa.floating-editor.v1')),null);
+
+ await page.locator('#contrastToggle').click();
+ assert.equal(await page.locator('html').getAttribute('data-inverse'),'true');
+ assert.equal(await page.locator('#contrastToggle').getAttribute('aria-pressed'),'true');
+ assert((await page.locator('#v83ChartFrame').evaluate(e=>getComputedStyle(e).filter)).includes('invert(1)'));
+ await page.reload({waitUntil:'load'});f=page.frames().find(f=>f.url().includes('/keyboard-v83-10/chart.html'));vowels=f.locator('#vowelQuadrilateral .v83-ipa-key');await f.locator('.v83-ipa-key').first().waitFor();
+ assert.equal(await page.locator('html').getAttribute('data-inverse'),'true','inverse preference survives reload');
+ await dragPanelTo(8,300);const inv=await panel.boundingBox();await page.evaluate(()=>scrollTo(0,200));
+ assert(Math.abs((await panel.boundingBox()).y-inv.y)<.5,'inverse mode keeps panel fixed');
+ await page.screenshot({path:`qa8310/${name}-${width}-inverse-editor.png`});
+ await page.locator('#contrastToggle').click();
+ assert.equal(await page.locator('html').getAttribute('data-inverse'),'false');
+ const controls=await panel.evaluate(e=>{const p=e.getBoundingClientRect();return[...e.querySelectorAll('.main-controls button')].every(b=>{const r=b.getBoundingClientRect();return r.left>=p.left&&r.right<=p.right&&r.top>=p.top&&r.bottom<=p.bottom;});});
+ assert(controls,'all editor controls fit inside the panel');
+
  // A floating editor just above a key must not displace its popup far away.
  const obstacleKey=f.locator('#diacritics .v83-ipa-key').first();
  await obstacleKey.scrollIntoViewIfNeeded();let kr=await obstacleKey.boundingBox();
@@ -173,7 +188,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  const focus=await f.evaluate(()=>({key:document.activeElement?.classList.contains('v83-ipa-key'),outline:getComputedStyle(document.activeElement).outlineStyle}));assert(focus.key);assert.equal(focus.outline,'solid');
  const kbefore=await out.inputValue();await page.keyboard.press('Enter');assert.notEqual(await out.inputValue(),kbefore);
  await vowels.first().focus();await page.keyboard.press('Space');await page.waitForTimeout(345);assert.equal((await f.evaluate(()=>__v839DotState())).diameter,13);
- assert.deepEqual(errors,[]);console.log(`PASS ${name} ${width}: 235 shared glow/dot/popup checks and exact inputs; all 7 sections and note normal+zoom+touch; keyboard, locales, undo/redo, geometry`);
+ assert.deepEqual(errors,[]);console.log(`PASS ${name} ${width}: 235 shared glow/dot/popup checks and exact inputs; all 7 sections and note normal+zoom+touch; keyboard, locales, undo/redo, geometry, floating editor, inverse mode`);
  await page.close();
  }await browser.close();
 }

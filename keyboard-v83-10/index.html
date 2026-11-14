@@ -343,18 +343,35 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .v83-label{font:12px/1.5 system-ui,sans-serif;color:#444;padding:4px 0 8px;text-align:center}
 
 /* v83.10: draggable editor remains available above both chart viewing modes. */
-.toolbar#floatingEditor{position:fixed;z-index:2147483647;left:8px;top:110px;width:min(480px,calc(100vw - 16px));padding:8px;border:1px solid #aaa;border-radius:12px;background:rgba(250,250,249,.98);box-shadow:0 6px 24px #0003;max-height:calc(var(--panel-vh,100dvh) - 16px);overflow:auto;box-sizing:border-box}
+.toolbar#floatingEditor{position:fixed;z-index:2147483647;left:8px;top:110px;width:min(480px,calc(100vw - 16px));padding:8px;border:1px solid #aaa;border-radius:12px;background:#fafaf9;box-shadow:0 6px 24px #0003;max-height:calc(var(--panel-vh,100dvh) - 16px);overflow:auto;box-sizing:border-box}
 #floatingEditor .output{display:block;min-height:58px;max-height:min(180px,calc(var(--panel-vh,100dvh)*.35));resize:none}
 .input-panel-grip{display:flex;align-items:center;gap:8px;margin:-4px -2px 6px;direction:ltr}
 #inputPanelDrag{display:flex;align-items:center;gap:8px;flex:1;min-height:34px;border:0;background:transparent;color:#555;font:12px system-ui,sans-serif;text-align:left;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}
 #inputPanelDrag:active{cursor:grabbing}
-#inputPanelDrag:focus-visible,#inputPanelReset:focus-visible{outline:2px solid #9879d3;outline-offset:1px}
-#inputPanelReset{width:34px;height:34px;border:0;border-radius:6px;background:#eee;color:#555;font-size:21px;cursor:pointer}
+#inputPanelDrag:focus-visible,#inputPanelReset:focus-visible,#contrastToggle:focus-visible{outline:2px solid #9879d3;outline-offset:1px}
+#inputPanelReset,#contrastToggle{width:34px;height:34px;border:0;border-radius:6px;background:#eee;color:#555;font-size:21px;cursor:pointer}
+#floatingEditor.input-panel-compact .main-controls{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+#floatingEditor.input-panel-compact .main-controls>.ctl{width:100%;min-width:0}
+#floatingEditor.input-panel-compact .dia-control{grid-column:span 3;min-width:0;display:flex}
+#floatingEditor.input-panel-compact .dia-quick{flex:1;min-width:0}
+#floatingEditor.input-panel-compact .dia-quick button{flex:1;min-width:28px}
+#floatingEditor.input-panel-compact .clear-separator{display:none}
+#floatingEditor.input-panel-compact #status{grid-column:1/-1}
+#floatingEditor.input-panel-compact #status:empty{display:none}
 #floatingEditor .settings-panel{position:static;width:100%;margin:8px 0 0}
 #floatingEditor .settings-panel::before{display:none}
 body.input-panel-dragging,body.input-panel-dragging *{cursor:grabbing!important;-webkit-user-select:none!important;user-select:none!important}
 
-</style></head><body><main class="app"><header class="app-header"><div class="ipa-standard">IPA Chart 2026 日本語版準拠</div><h1 class="title"><span>IPA Keyboard</span></h1><select class="version-ja language-select" id="languageSelect" aria-label="言語選択"><option value="ja" selected>日本語</option><option value="en">English</option><option value="pt-BR">Português brasileiro</option><option value="fa" lang="fa" dir="rtl">فارسی</option><option value="ja-osaka">大阪方言</option></select></header><div class="toolbar" id="floatingEditor" role="region" aria-label="移動できるIPA入力パネル"><div class="input-panel-grip"><button type="button" id="inputPanelDrag" aria-label="入力パネルを移動。矢印キーでも移動できます"><span aria-hidden="true">⠿</span><span id="inputPanelTitle">IPA入力</span></button><button type="button" id="inputPanelReset" title="入力パネルの位置を戻す" aria-label="入力パネルの位置を戻す">↺</button></div><textarea id="out" class="output ipa" aria-label="IPA入力欄" spellcheck="false" style="height: 97px;"></textarea><div class="controls main-controls">
+
+/* Invert each surface, preserving the viewport containing block for the movable panel. */
+html[data-inverse="true"]{color-scheme:dark;background:#141414}
+html[data-inverse="true"] body,html[data-inverse="true"] .app-header{background:#141414;color:#eee}
+html[data-inverse="true"] .language-select{background:#252525;color:#eee;border-color:#777}
+html[data-inverse="true"] .ipa-standard,html[data-inverse="true"] .v83-label,html[data-inverse="true"] .esakits-bottom{color:#ccc}
+html[data-inverse="true"] .v83-integrated{background:#000}
+html[data-inverse="true"] #floatingEditor,html[data-inverse="true"] #v83ChartFrame,html[data-inverse="true"] .info-dialog,html[data-inverse="true"] .confirm-dialog,html[data-inverse="true"] #toast,html[data-inverse="true"] #pop{filter:invert(1) hue-rotate(180deg);color-scheme:light}
+#contrastToggle[aria-pressed="true"]{background:#d4c2ee}
+</style></head><body><main class="app"><header class="app-header"><div class="ipa-standard">IPA Chart 2026 日本語版準拠</div><h1 class="title"><span>IPA Keyboard</span></h1><select class="version-ja language-select" id="languageSelect" aria-label="言語選択"><option value="ja" selected>日本語</option><option value="en">English</option><option value="pt-BR">Português brasileiro</option><option value="fa" lang="fa" dir="rtl">فارسی</option><option value="ja-osaka">大阪方言</option></select></header><div class="toolbar" id="floatingEditor" role="region" aria-label="移動できるIPA入力パネル"><div class="input-panel-grip"><button type="button" id="inputPanelDrag" aria-label="入力パネルを移動。矢印キーでも移動できます"><span aria-hidden="true">⠿</span><span id="inputPanelTitle">IPA入力</span></button><button type="button" id="contrastToggle" title="白黒反転" aria-label="白黒反転" aria-pressed="false">◐</button><button type="button" id="inputPanelReset" title="入力パネルの位置を戻す" aria-label="入力パネルの位置を戻す">↺</button></div><textarea id="out" class="output ipa" aria-label="IPA入力欄" spellcheck="false" style="height: 97px;"></textarea><div class="controls main-controls">
 <button class="ctl bracket-btn" id="phonetic" title="角括弧を付ける" aria-label="角括弧を付ける">[ ]</button>
 <button class="ctl icon-btn" id="copy" title="コピー" aria-label="コピー"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="1.5"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-10A1.5 1.5 0 0 0 3 5.5v10A1.5 1.5 0 0 0 4.5 17H8"/></svg></button>
 <button class="ctl icon-btn" id="undo" title="元に戻す" aria-label="元に戻す"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 4 12l5 5"/><path d="M5 12h8a6 6 0 0 1 6 6"/></svg></button>
@@ -695,7 +712,7 @@ function bounds(){
 function place(){
  const b=bounds();
  panel.style.setProperty('--panel-vh',(b.h+16)+'px');
- panel.style.width=Math.min(480,b.w)+'px';
+ const width=Math.min(480,b.w);panel.style.width=width+'px';panel.classList.toggle('input-panel-compact',width<450);
  const r=panel.getBoundingClientRect(),dx=Math.max(0,b.w-r.width),dy=Math.max(0,b.h-r.height);
  const x=position?b.x+position.x*dx:b.x+((b.w>700)?dx:0);
  const y=position?b.y+position.y*dy:b.y+((b.w>700)?Math.min(102,dy):dy);
@@ -738,6 +755,22 @@ window.visualViewport?.addEventListener('resize',()=>{if(!drag)place();});
 window.visualViewport?.addEventListener('scroll',()=>{if(!drag)place();});
 new ResizeObserver(()=>{if(!drag)place();}).observe(panel);
 labels();place();
+})();
+</script>
+
+<script id="v8310-inverse-mode">
+(function(){
+'use strict';
+const button=document.getElementById('contrastToggle'),picker=document.getElementById('languageSelect'),key='esakits.ipa.inverse.v1';
+let inverse=false;try{inverse=localStorage.getItem(key)==='1';}catch(e){}
+function apply(){
+ document.documentElement.dataset.inverse=String(inverse);
+ button.setAttribute('aria-pressed',String(inverse));
+ const names={ja:'白黒反転',en:'Invert colours','pt-BR':'Inverter cores',fa:'وارونه کردن رنگ‌ها','ja-osaka':'白黒反転'};
+ const name=names[picker.value]||names.ja;button.title=name;button.setAttribute('aria-label',name);
+}
+button.addEventListener('click',()=>{inverse=!inverse;try{localStorage.setItem(key,inverse?'1':'0');}catch(e){}apply();});
+picker.addEventListener('change',apply);apply();
 })();
 </script>
 </body></html>
