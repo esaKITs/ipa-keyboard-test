@@ -21,6 +21,13 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  await sf.locator('.v83-ipa-key').first().waitFor();await sf.evaluate(()=>document.fonts.ready);
  const geometry=()=>({svg:document.querySelector('#vowelQuadrilateral').outerHTML,keys:[...document.querySelectorAll('.v83-ipa-key')].map(e=>{let r=e.getBoundingClientRect();return [e.dataset.v83Sym,r.width,r.height,r.x,r.y]})});
  assert.deepEqual(await f.evaluate(geometry),await sf.evaluate(geometry));await source.close();
+ const prior=await browser.newPage({viewport:{width,height:844}});
+ await prior.goto(base+'keyboard-v83-7/');
+ const pf=prior.frames().find(f=>f.url().includes('/keyboard-v83-7/chart.html'));
+ const pk=pf.locator('#vowelQuadrilateral .v83-ipa-key').first();
+ await pk.scrollIntoViewIfNeeded();await pk.dispatchEvent('pointerdown',{pointerType:'touch'});
+ const oldGap=await pk.evaluate(e=>e.getBoundingClientRect().top-document.querySelector('#v831SymbolPopup').getBoundingClientRect().bottom);
+ console.log('BASELINE_POPUP_GAP '+name+'/'+width+' '+oldGap);assert(Math.abs(oldGap-82)<.2,'reproduce old detached popup');await prior.close();
  const vowels=f.locator('#vowelQuadrilateral .v83-ipa-key');
  async function screenPoint(key){
   await key.scrollIntoViewIfNeeded();
@@ -50,9 +57,9 @@ for(const [name,type] of Object.entries({chromium,webkit})){
    const g=document.querySelector('.v83-purple-flash'),d=document.querySelector('#v837SelectedVowelDot'),p=__v831PopupState();
    const r=g.getBoundingClientRect(),s=getComputedStyle(g),a=document.querySelectorAll('#vowelQuadrilateral .v83-ipa-key');
    const target=[...a].find(e=>e.dataset.v83Sym===p.text);if(!target)throw Error('Popup not shown: '+JSON.stringify(p));const t=target.getBoundingClientRect();const pr=document.querySelector('#v831SymbolPopup').getBoundingClientRect();
-   return {popup:{gap:t.top-pr.bottom,center:pr.left+pr.width/2-(t.left+t.width/2),rect:pr.toJSON()},w:r.width,h:r.height,dx:r.x+r.width/2-t.x-t.width/2,dy:r.y+r.height/2-t.y-t.height/2,display:s.display,bg:s.backgroundImage,border:s.borderStyle,shadow:s.boxShadow,dot:getComputedStyle(d).display,p};
+   return {popup:{viewportWidth:innerWidth,gap:t.top-pr.bottom,center:pr.left+pr.width/2-(t.left+t.width/2),rect:pr.toJSON()},w:r.width,h:r.height,dx:r.x+r.width/2-t.x-t.width/2,dy:r.y+r.height/2-t.y-t.height/2,display:s.display,bg:s.backgroundImage,border:s.borderStyle,shadow:s.boxShadow,dot:getComputedStyle(d).display,p};
   });
-  assert(state.w>=12.5&&state.w<=26.1,'growing glow width '+state.w);assert(state.h>=12.5&&state.h<=26.1,'growing glow height '+state.h);assert(Math.abs(state.dx)<.02&&Math.abs(state.dy)<.02);assert.equal(state.display,'block');assert.equal(state.dot,'none');assert.equal(state.border,'none');assert.equal(state.shadow,'none');assert(state.bg.includes('radial-gradient')&&state.bg.includes('166, 128, 222'),JSON.stringify(state));assert(state.p.show);assert(Math.abs(state.popup.gap-7)<.1,'popup must be 7px above pressed glyph: '+JSON.stringify(state.popup));assert(Math.abs(state.popup.center)<.1,'popup must center on pressed glyph: '+JSON.stringify(state.popup));
+  assert(state.w>=12.5&&state.w<=26.1,'growing glow width '+state.w);assert(state.h>=12.5&&state.h<=26.1,'growing glow height '+state.h);assert(Math.abs(state.dx)<.02&&Math.abs(state.dy)<.02);assert.equal(state.display,'block');assert.equal(state.dot,'none');assert.equal(state.border,'none');assert.equal(state.shadow,'none');assert(state.bg.includes('radial-gradient')&&state.bg.includes('166, 128, 222'),JSON.stringify(state));assert(state.p.show);assert(Math.abs(state.popup.gap-7)<.1,'popup must be 7px above pressed glyph: '+JSON.stringify(state.popup));assert(Math.abs(state.popup.center)<.1 || (state.popup.center<0&&Math.abs(state.popup.rect.right-(state.popup.viewportWidth-4))<.2) || (state.popup.center>0&&Math.abs(state.popup.rect.left-4)<.2),'popup must center or stay within frame edge: '+JSON.stringify(state.popup));
   // Grow animation must expand from a 13px visual core to full 26px, without a step change.
   if(label){await page.waitForTimeout(260);const expanded=await f.locator('.v83-purple-flash').evaluate(el=>({transform:getComputedStyle(el).transform,opacity:Number(getComputedStyle(el).opacity)}));assert(expanded.opacity>.95,'glow reaches full opacity');const fullWidth=await f.locator('.v83-purple-flash').evaluate(el=>el.getBoundingClientRect().width);assert(Math.abs(fullWidth-26)<.2,'glow grows to 26px: '+fullWidth);}
   if(label)await page.screenshot({path:`qa838/${name}-${width}-${label}-held.png`});
