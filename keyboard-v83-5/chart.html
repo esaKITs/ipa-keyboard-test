@@ -1887,7 +1887,7 @@ selectedDot.id='v834SelectedVowelDot';
 selectedDot.setAttribute('aria-hidden','true');
 selectedDot.style.cssText='position:fixed;display:none;z-index:2147483645;width:13px;height:13px;border-radius:50%;background:rgba(166,128,222,.18);border:0;box-shadow:none;pointer-events:none';
 document.body.appendChild(selectedDot);
-let selectedVowel=null, heldVowel=null;
+let selectedVowel=null, heldVowel=null, suppressVowelClick=null;
 function repositionSelectedDot(){
  if(heldVowel||!selectedVowel||!document.contains(selectedVowel)){selectedDot.style.display='none';return;}
  const rect=selectedVowel.getBoundingClientRect();
@@ -1982,9 +1982,13 @@ function activate(el,e){
    else if(e?.type==='keydown')el.focus({preventScroll:true});
  }
 }
-document.addEventListener('click',e=>activate(hitFrom(e.target),e),true);
-document.addEventListener('keydown',e=>{const el=hitFrom(e.target);if(el&&(e.key==='Enter'||e.key===' '))activate(el,e);},true);
-document.addEventListener('pointerdown',e=>{const el=hitFrom(e.target);if(el){
+document.addEventListener('click',e=>{
+ const el=hitFrom(e.target);
+ if(el&&el===suppressVowelClick&&e.detail!==0){e.preventDefault();suppressVowelClick=null;return;}
+ activate(el,e);
+},true);
+document.addEventListener('keydown',e=>{suppressVowelClick=null;const el=hitFrom(e.target);if(el&&(e.key==='Enter'||e.key===' '))activate(el,e);},true);
+document.addEventListener('pointerdown',e=>{suppressVowelClick=null;const el=hitFrom(e.target);if(el){
  if(el.closest('#vowelQuadrilateral')){
   // Cancel native SVG focus/selection before Safari can paint its touch rectangle.
   e.preventDefault();heldVowel=el;selectedDot.style.display='none';
@@ -1993,8 +1997,11 @@ document.addEventListener('pointerdown',e=>{const el=hitFrom(e.target);if(el){
 }},true);
 function releaseVowel(){if(heldVowel){heldVowel=null;flash.style.display='none';repositionSelectedDot();}}
 document.addEventListener('pointerup',e=>{
- const active=hitFrom(e.target);
+ const active=hitFrom(e.target),touchVowel=e.pointerType==='touch'?heldVowel:null;
  releaseVowel();hideSymbolPopup();
+ // WebKit can suppress its compatibility click after the native selection is cancelled.
+ // Commit a vowel touch on release and consume any later compatibility click once.
+ if(touchVowel&&active===touchVowel){activate(touchVowel,e);suppressVowelClick=touchVowel;}
  if(active?.closest('#vowelQuadrilateral')){
   const selection=window.getSelection?.();if(selection&&selection.rangeCount)selection.removeAllRanges();
   // iPhone Safari sometimes persists a selected SVG-text focus rectangle after touchend.

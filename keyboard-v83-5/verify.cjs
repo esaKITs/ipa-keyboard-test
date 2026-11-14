@@ -82,7 +82,13 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  await f.locator('#zoomMapToggle').click();assert(await f.locator('#zoomMinimap').isVisible());
  await f.locator('#zoomClose').click();await page.waitForFunction(()=>!document.querySelector('#v83ChartFrame').classList.contains('zoom-fullscreen'));await press(vowels.last());
  // A touch tap also produces input and the residual dot without a native selection.
- const touchPoint=await screenPoint(vowels.first());await page.touchscreen.tap(touchPoint.x,touchPoint.y);await f.waitForFunction(()=>__v834DotState().tag==='i',{timeout:3000});assert.equal((await f.evaluate(()=>__v834DotState())).tag,'i');
+ for(const i of [0,1,1,27]){
+  const touchKey=vowels.nth(i),sym=await touchKey.getAttribute('data-v83-sym'),before=await out.inputValue(),touchPoint=await screenPoint(touchKey);
+  await page.touchscreen.tap(touchPoint.x,touchPoint.y);
+  await f.waitForFunction(v=>__v834DotState().tag===v,sym,{timeout:3000});
+  await page.waitForTimeout(350);
+  assert.equal(await out.inputValue(),before+sym,'one input per touch');
+ }
  // Native keyboard focus remains visibly outlined; Enter and Space still insert.
  await vowels.first().focus();await page.keyboard.press('Tab');
  const focus=await f.evaluate(()=>({key:document.activeElement?.classList.contains('v83-ipa-key'),outline:getComputedStyle(document.activeElement).outlineStyle}));assert(focus.key);assert.equal(focus.outline,'solid');
