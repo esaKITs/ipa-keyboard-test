@@ -674,7 +674,7 @@ body{padding:8px!important;overflow-x:hidden!important}
 .zoom-toolbar input[type=range]{width:120px;max-width:29vw;accent-color:#2277aa}
 .zoom-toolbar .zoom-label{font-size:15px;font-weight:700;min-width:52px;text-align:right}
 .zoom-toolbar .zoom-title{font-size:16px;font-weight:700;margin-right:auto}
-.zoom-viewport{position:relative;flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;background:#e9edf1;touch-action:pan-x pan-y}
+.zoom-viewport{position:relative;flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;background:#e9edf1;touch-action:none}
 .zoom-stage{position:relative;margin:0;overflow:visible;background:#fff}
 .zoom-stage>#chart{position:absolute;left:0;top:0;transform-origin:top left;max-width:none!important}
 .zoom-minimap{position:absolute;z-index:4;right:12px;top:72px;width:178px;height:156px;background:rgba(255,255,255,.96);color:#26323c;border:1px solid #8796a5;border-radius:6px;box-shadow:0 2px 12px #0003;touch-action:none;user-select:none;cursor:crosshair}
@@ -1707,7 +1707,11 @@ function beginPinch(touches){
  document.documentElement.dataset.chartGesture='pinch';
  document.dispatchEvent(new Event('esa-chart-gesture-start'));
 }
-viewport.addEventListener('touchstart',e=>{if(active&&e.touches.length>=2){e.preventDefault();beginPinch(e.touches);}}, {passive:false,capture:true});
+viewport.addEventListener('touchstart',e=>{
+ if(!active)return;
+ if(e.touches.length>=2){e.preventDefault();pinchPan=null;beginPinch(e.touches);}
+ else if(e.touches.length===1){const p=point(e.touches[0]);pinchPan={x:p.x,y:p.y,startX:p.x,startY:p.y,moved:false};}
+}, {passive:false,capture:true});
 viewport.addEventListener('touchmove',e=>{
  if(!active)return;
  if(e.touches.length>=2){
@@ -1715,11 +1719,16 @@ viewport.addEventListener('touchmove',e=>{
   const a=point(e.touches[0]),b=point(e.touches[1]),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
   setZoom(pinch.zoom*Math.hypot(a.x-b.x,a.y-b.y)/pinch.distance,false);
   viewport.scrollLeft=pinch.chartX*scale()-mx;viewport.scrollTop=pinch.chartY*scale()-my;renderMinimap();
- }else if(document.documentElement.dataset.chartGesture==='pinch'&&e.touches.length===1){
-  e.preventDefault();const p=point(e.touches[0]);if(pinchPan){viewport.scrollLeft+=pinchPan.x-p.x;viewport.scrollTop+=pinchPan.y-p.y;}pinchPan=p;
+ }else if(e.touches.length===1&&pinchPan){
+  const p=point(e.touches[0]);
+  if(!pinchPan.moved&&Math.hypot(p.x-pinchPan.startX,p.y-pinchPan.startY)>6){
+   pinchPan.moved=true;document.documentElement.dataset.chartGesture='pan';document.dispatchEvent(new Event('esa-chart-gesture-start'));
+  }
+  if(pinchPan.moved){e.preventDefault();viewport.scrollLeft+=pinchPan.x-p.x;viewport.scrollTop+=pinchPan.y-p.y;renderMinimap();}
+  pinchPan.x=p.x;pinchPan.y=p.y;
  }
 },{passive:false,capture:true});
-function endPinch(e){if(!e.touches.length){pinch=null;pinchPan=null;delete document.documentElement.dataset.chartGesture;}else if(e.touches.length===1){pinch=null;pinchPan=point(e.touches[0]);}}
+function endPinch(e){if(!e.touches.length){pinch=null;pinchPan=null;delete document.documentElement.dataset.chartGesture;}else if(e.touches.length===1){pinch=null;const p=point(e.touches[0]);pinchPan={x:p.x,y:p.y,startX:p.x,startY:p.y,moved:true};}}
 viewport.addEventListener('touchend',endPinch,{passive:true});viewport.addEventListener('touchcancel',endPinch,{passive:true});
 window.addEventListener('message',e=>{if(e.origin===location.origin&&e.source===parent&&e.data?.kind==='esa-chart-zoom-layout')queueViewerLayout();});
 openBtn.addEventListener("click",openViewer);
@@ -2041,7 +2050,7 @@ function flashHit(el){
 }
 
 function activate(el,e){
- if(!el||document.documentElement.dataset.chartGesture==='pinch')return;
+ if(!el||document.documentElement.dataset.chartGesture)return;
  e?.preventDefault();
  const sym=el.dataset.v83Sym;if(!sym)return;
  selectSymbol(el);
@@ -2057,7 +2066,7 @@ document.addEventListener('click',e=>{
  activate(el,e);
 },true);
 document.addEventListener('keydown',e=>{suppressSymbolClick=null;const el=hitFrom(e.target);if(el&&(e.key==='Enter'||e.key===' '))activate(el,e);},true);
-document.addEventListener('pointerdown',e=>{if(document.documentElement.dataset.chartGesture==='pinch')return;gestureSuppressed=false;suppressSymbolClick=null;const el=hitFrom(e.target);if(el){
+document.addEventListener('pointerdown',e=>{if(document.documentElement.dataset.chartGesture)return;gestureSuppressed=false;suppressSymbolClick=null;const el=hitFrom(e.target);if(el){
  // Keep the editor caret and suppress native touch selection for every symbol.
  e.preventDefault();heldSymbol=el;selectedDot.style.opacity='0';selectedDot.style.display='none';
  flashHit(el);showSymbolPopup(el);
@@ -2074,7 +2083,7 @@ function releaseSymbol(){if(heldSymbol){
  glowReleaseTimer=setTimeout(()=>{flash.style.display='none';if(symbolGlowAnimation){symbolGlowAnimation.cancel();symbolGlowAnimation=null;}},310);
 }}
 document.addEventListener('pointerup',e=>{
- if(gestureSuppressed||document.documentElement.dataset.chartGesture==='pinch'){hideSymbolPopup();return;}
+ if(gestureSuppressed||document.documentElement.dataset.chartGesture){hideSymbolPopup();return;}
  const active=hitFrom(e.target),touchSymbol=e.pointerType==='touch'?heldSymbol:null;
  releaseSymbol();hideSymbolPopup();
  // WebKit can suppress its compatibility click after the native selection is cancelled.
