@@ -1,0 +1,60 @@
+name: Verify and publish IPA Keyboard v83.12
+on:
+  push:
+    branches: [work/vowel-v060-20261111]
+    paths: ['keyboard-v83-12/**', '.github/workflows/publish-keyboard-v8312.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-v8312
+  cancel-in-progress: true
+jobs:
+  verify:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.61.1
+      - run: npx playwright install chromium webkit --with-deps
+      - name: Chromium and WebKit complete browser verification
+        run: |
+          python3 -m http.server 8765 >/tmp/ipa8312-http.log 2>&1 &
+          node keyboard-v83-12/gestures.cjs
+          node keyboard-v83-12/verify.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa8312-screenshots
+          path: qa8312/
+      - name: Preserve all existing site versions
+        run: |
+          mkdir public
+          rsync -a --exclude=.git --exclude=.github --exclude=public --exclude=node_modules --exclude=qa8312 ./ public/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}keyboard-v83-12/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Confirm public v83.12
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsSL https://esakits.github.io/ipa-keyboard-test/keyboard-v83-12/ -o /tmp/v8312.html && curl -fsSL https://esakits.github.io/ipa-keyboard-test/keyboard-v83-12/chart.html -o /tmp/v8312chart.html && grep -q '83.12 IPA Keyboard TEST' /tmp/v8312.html && grep -q '26px feathered feedback' /tmp/v8312chart.html; then
+              echo 'Public v83.12 confirmed'
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
