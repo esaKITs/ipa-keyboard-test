@@ -114,11 +114,12 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  ui=await page.evaluate(uiState);assert.equal(ui.font,26);assert(Math.abs(ui.width-(phone?280:360))<1);
  assert.equal(ui.button,phone?28:32,'font/width do not scale controls');
  assert.deepEqual(await f.evaluate(chartState),originalChart,'panel resizing and font choice leave chart unchanged');
- await page.setViewportSize({width:phone?900:390,height:844});await page.waitForTimeout(100);
+ await page.bringToFront();await page.setViewportSize({width:phone?900:390,height:844});
+ await page.waitForFunction(expected=>parseFloat(getComputedStyle(document.getElementById('out')).fontSize)===expected,phone?32:22);
  ui=await page.evaluate(uiState);assert.equal(ui.font,phone?32:22);assert(Math.abs(ui.width-(phone?440:320))<1,'automatic phone/desktop width');
  await page.locator('#inputSizeSlider').fill(phone?'5':'1');
  await page.locator('#panelWidthSlider').fill(phone?'500':'300');
- await page.setViewportSize({width,height:844});await page.waitForTimeout(100);
+ await page.setViewportSize({width,height:844});await page.waitForFunction(()=>parseFloat(getComputedStyle(document.getElementById('out')).fontSize)===26);
  ui=await page.evaluate(uiState);assert.equal(ui.font,26);assert(Math.abs(ui.width-(phone?280:360))<1,'profile choice restored');
  await page.locator('#inputSizeSlider').fill(phone?'2':'4');
  await page.locator('#panelWidthSlider').fill(String(defaultWidth));
