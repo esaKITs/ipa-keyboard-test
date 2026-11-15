@@ -24,6 +24,11 @@ jobs:
       - run: npx playwright install chromium webkit --with-deps
       - name: Start preview server
         run: nohup python3 -m http.server 8765 >/tmp/ipa8315-http.log 2>&1 &
+      - name: Chromium and WebKit representative input and layout regression
+        run: |
+          for target in webkit/390 webkit/1280 chromium/390 chromium/1280; do
+            TEST_CASE=$target node keyboard-v83-15/verify.cjs
+          done
       - name: Verify glow strength, off, persistence, and translations
         run: node keyboard-v83-15/intensity.cjs
       - name: Verify colours, scaled glow, and gestures
@@ -31,11 +36,6 @@ jobs:
           node keyboard-v83-15/feedback.cjs
           node keyboard-v83-15/inline.cjs
           node keyboard-v83-15/gestures.cjs
-      - name: Chromium and WebKit representative input and layout regression
-        run: |
-          for target in webkit/390 webkit/1280 chromium/390 chromium/1280; do
-            TEST_CASE=$target node keyboard-v83-15/verify.cjs
-          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -29,6 +29,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
   await document.fonts.ready;window.dispatchEvent(new Event('resize'));
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(r))));
  });
+ console.log('LABEL_FONT_DIAGNOSTIC '+JSON.stringify(await Promise.all([f,sf].map(frame=>frame.evaluate(()=>{const el=document.querySelector('.vowel-measured-label'),s=getComputedStyle(el);return{font:s.font,family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,spacing:s.letterSpacing,box:el.getBBox(),dy:el.getAttribute('dy'),loaded:[...document.fonts].map(f=>({family:f.family,status:f.status,weight:f.weight}))};})))));
  assert.deepEqual(await f.evaluate(geometry),await sf.evaluate(geometry));await source.close();
  const prior=await browser.newPage({viewport:{width,height:844}});
  await prior.goto(base+'keyboard-v83-7/');
