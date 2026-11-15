@@ -18,7 +18,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  assert.equal(await f.locator('.v83-ipa-key').count(),235);
  assert.equal(await f.locator('#vowelQuadrilateral .v83-ipa-key').count(),28);
  // Compare all hitboxes and complete SVG geometry against the user-approved, unchanged v83.14.
- const source=await browser.newPage({viewport:{width,height:844}});
+ const source=await browser.newPage({viewport:{width,height:844},hasTouch:true});
  await source.goto(base+'keyboard-v83-14/');
  const sf=await chartFrame(source);
  await sf.locator('.v83-ipa-key').first().waitFor();await sf.evaluate(()=>document.fonts.ready);await sf.waitForFunction(()=>document.querySelector('#vowelQuadrilateral .vowel-dynamic-glyph').style.fontSize==='32px');
@@ -29,7 +29,7 @@ for(const [name,type] of Object.entries({chromium,webkit})){
   await document.fonts.ready;window.dispatchEvent(new Event('resize'));
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(r))));
  });
- console.log('LABEL_FONT_DIAGNOSTIC '+JSON.stringify(await Promise.all([f,sf].map(frame=>frame.evaluate(()=>{const el=document.querySelector('.vowel-measured-label'),s=getComputedStyle(el);return{font:s.font,family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,spacing:s.letterSpacing,box:el.getBBox(),dy:el.getAttribute('dy'),loaded:[...document.fonts].map(f=>({family:f.family,status:f.status,weight:f.weight}))};})))));
+ console.log('LABEL_FONT_DIAGNOSTIC '+JSON.stringify(await Promise.all([f,sf].map(frame=>frame.evaluate(()=>{const el=document.querySelector('.vowel-measured-label'),s=getComputedStyle(el);return{font:s.font,family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,spacing:s.letterSpacing,box:{x:el.getBBox().x,y:el.getBBox().y,width:el.getBBox().width,height:el.getBBox().height},fit:document.getElementById('chartScaleContent').style.transform,viewport:innerWidth,touch:navigator.maxTouchPoints,dy:el.getAttribute('dy'),loaded:[...document.fonts].map(f=>({family:f.family,status:f.status,weight:f.weight}))};})))));
  assert.deepEqual(await f.evaluate(geometry),await sf.evaluate(geometry));await source.close();
  const prior=await browser.newPage({viewport:{width,height:844}});
  await prior.goto(base+'keyboard-v83-7/');
