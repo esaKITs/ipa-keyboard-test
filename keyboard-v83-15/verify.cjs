@@ -23,6 +23,12 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  const sf=await chartFrame(source);
  await sf.locator('.v83-ipa-key').first().waitFor();await sf.evaluate(()=>document.fonts.ready);await sf.waitForFunction(()=>document.querySelector('#vowelQuadrilateral .vowel-dynamic-glyph').style.fontSize==='32px');
  const geometry=()=>({svg:document.querySelector('#vowelQuadrilateral').outerHTML,keys:[...document.querySelectorAll('.v83-ipa-key:not([data-v8310-added])')].map(e=>{let r=e.getBoundingClientRect();return [e.dataset.v83Sym,r.width,r.height,r.x,r.y]})});
+ // Japanese labels load lazily after the chart's IPA font; compare after both fonts and recentering frames finish.
+ for(const frame of [f,sf])await frame.evaluate(async()=>{
+  await Promise.all([document.fonts.load('10px "Noto Sans JP Local"','前舌中舌後舌狭半狭半広広'),document.fonts.load('700 10px "Noto Sans JP Local"','前舌中舌後舌狭半狭半広広')]);
+  await document.fonts.ready;window.dispatchEvent(new Event('resize'));
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+ });
  assert.deepEqual(await f.evaluate(geometry),await sf.evaluate(geometry));await source.close();
  const prior=await browser.newPage({viewport:{width,height:844}});
  await prior.goto(base+'keyboard-v83-7/');
