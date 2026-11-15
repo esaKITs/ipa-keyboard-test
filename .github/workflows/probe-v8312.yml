@@ -1,0 +1,26 @@
+name: Diagnose mobile pinch and zoom v83.12
+on:
+  push:
+    branches: [work/vowel-v060-20261111]
+    paths: ['keyboard-v83-12/probe.cjs','.github/workflows/probe-v8312.yml']
+permissions:
+  contents: read
+jobs:
+  probe:
+    timeout-minutes: 4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.61.1
+      - run: npx playwright install chromium webkit --with-deps
+      - run: |
+          python3 -m http.server 8765 >/tmp/probe.log 2>&1 &
+          node keyboard-v83-12/probe.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pinch-probe
+          path: pinch-probe/
