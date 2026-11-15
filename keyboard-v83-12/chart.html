@@ -1685,8 +1685,8 @@ function openViewer(){
  try{
   dialog.hidden=false;dialog.dataset.ready='false';document.body.style.overflow='hidden';
   stage.appendChild(chart);chart.style.margin='0';chart.style.width=BASE+'px';chart.style.minWidth=BASE+'px';
-  zoom=1;baseScale=Math.min(1,Math.max(1,viewport.clientWidth-12)/BASE);
-  setZoom(1,false);viewport.scrollLeft=0;viewport.scrollTop=0;
+  zoom=clamp(parent!==window?(parent.visualViewport?.scale||1):1,1,3);baseScale=Math.min(1,Math.max(1,viewport.clientWidth-12)/BASE);
+  setZoom(zoom,false);viewport.scrollLeft=0;viewport.scrollTop=0;
   drawMap();renderMinimap();notifyZoom(true);queueViewerLayout();
   document.getElementById('zoomClose').focus({preventScroll:true});
  }catch(e){closeViewer();throw e;}

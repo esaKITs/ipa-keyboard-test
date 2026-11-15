@@ -50,7 +50,8 @@ async function touchPoints(p,points){return await p.evaluate(a=>a.map(t=>({x:vis
   await f.waitForFunction(()=>document.getElementById('chartZoomDialog').dataset.ready==='true');await stable(p);
   const open=await metrics(p);assert(Math.abs(open.width-initial.width)<1&&Math.abs(open.button-initial.button)<1);
   await touchInFrame(p,f,'#zoomMapToggle');await f.waitForFunction(()=>document.getElementById('zoomMinimap').hidden);
-  await touchInFrame(p,f,'#zoomPlus');assert.equal(await f.locator('#zoomRange').inputValue(),'125');
+  const entryZoom=Number(await f.locator('#zoomRange').inputValue());assert(Math.abs(entryZoom-Math.min(300,open.scale*100))<2,'entering zoom preserves existing chart magnification');
+  await touchInFrame(p,f,'#zoomPlus');assert.equal(Number(await f.locator('#zoomRange').inputValue()),Math.min(300,entryZoom+25));
   await f.locator('#zoomRange').fill('100');
   const beforeInput=await p.locator('#out').inputValue();
   if(cd){
