@@ -11,16 +11,18 @@ async function touchInFrame(p,f,selector){
  const pt=await f.locator(selector).evaluate(el=>{
   const r=el.getBoundingClientRect(),host=frameElement,fr=host.getBoundingClientRect(),v=parent.visualViewport;
   const sx=fr.width/host.clientWidth,sy=fr.height/host.clientHeight;
-  return{x:(fr.left+(r.left+r.width/2)*sx-v.offsetLeft)*v.scale,y:(fr.top+(r.top+r.height/2)*sy-v.offsetTop)*v.scale};
+  return{x:fr.left+(r.left+r.width/2)*sx,y:fr.top+(r.top+r.height/2)*sy,screenX:(fr.left+(r.left+r.width/2)*sx-v.offsetLeft)*v.scale,screenY:(fr.top+(r.top+r.height/2)*sy-v.offsetTop)*v.scale};
  });
- assert(pt.x>=0&&pt.x<=390&&pt.y>=0&&pt.y<=844,'touch control must be on screen '+selector+' '+JSON.stringify(pt));
+ assert(pt.screenX>=0&&pt.screenX<=390&&pt.screenY>=0&&pt.screenY<=844,'touch control must be on screen '+selector+' '+JSON.stringify(pt));
  await p.touchscreen.tap(pt.x,pt.y);
+ console.log('FRAME_TOUCH '+selector+' '+JSON.stringify({point:pt,host:await p.evaluate(()=>window.__lastPointer),child:await f.evaluate(()=>window.__lastPointer)}));
 }
+async function touchPoints(p,points){return await p.evaluate(a=>a.map(t=>({x:visualViewport.offsetLeft+t.x/visualViewport.scale,y:visualViewport.offsetTop+t.y/visualViewport.scale})),points);}
 (async()=>{
  for(const[name,type]of Object.entries({chromium,webkit})){
   const b=await type.launch({headless:true}),p=await b.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});
   p.setDefaultTimeout(5000);const errors=[];p.on('pageerror',e=>errors.push(String(e)));
-  await p.addInitScript(()=>{window.__heartbeat=0;setInterval(()=>__heartbeat++,50);});
+  await p.addInitScript(()=>{window.__heartbeat=0;setInterval(()=>__heartbeat++,50);document.addEventListener('pointerdown',e=>{window.__lastPointer={id:e.target.closest?.('button')?.id,tag:e.target.tagName,x:e.clientX,y:e.clientY};},true);});
   await p.goto(base+'keyboard-v83-12/',{waitUntil:'load'});const f=await chartFrame(p);await p.evaluate(()=>document.fonts.ready);await stable(p);
   const initial=await metrics(p);
   await touchInFrame(p,f,'#chartZoomOpen');await p.waitForFunction(()=>document.getElementById('v83ChartFrame').classList.contains('zoom-fullscreen'));await f.waitForFunction(()=>document.getElementById('chartZoomDialog').dataset.ready==='true');
@@ -38,6 +40,8 @@ async function touchInFrame(p,f,selector){
    if(pinch.scale<=1.2){console.log('ROOT_BROWSER_PINCH_NOT_EMULATED: exercising actual browser page-scale state through CDP');await cd.send('Emulation.setPageScaleFactor',{pageScaleFactor:2});await p.waitForTimeout(100);await stable(p);}
    pinch=await metrics(p);
    assert(Math.abs(pinch.width-initial.width)<1&&Math.abs(pinch.height-initial.height)<1&&Math.abs(pinch.button-initial.button)<1,'browser page zoom leaves editor physical size unchanged');
+   const bt=await p.locator('#contrastToggle').evaluate(e=>{const r=e.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};});
+   await p.touchscreen.tap(bt.x,bt.y);console.log('ROOT_BUTTON_TOUCH '+JSON.stringify({point:bt,target:await p.evaluate(()=>window.__lastPointer)}));assert.equal(await p.locator('#contrastToggle').getAttribute('aria-pressed'),'true');await p.touchscreen.tap(bt.x,bt.y);
    await p.screenshot({path:'qa8312/chromium-native-page-scale-fixed-panel.png'});
   }
   // Open at the retained native page zoom, then exercise visible controls physically.
@@ -50,8 +54,8 @@ async function touchInFrame(p,f,selector){
   await f.locator('#zoomRange').fill('100');
   const beforeInput=await p.locator('#out').inputValue();
   if(cd){
-   await cd.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:145,y:360},{x:245,y:360}]});
-   for(const d of [60,70,85,100]){await cd.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:195-d,y:360},{x:195+d,y:360}]});await p.waitForTimeout(25);}
+   await cd.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:await touchPoints(p,[{x:145,y:360},{x:245,y:360}])});
+   for(const d of [60,70,85,100]){await cd.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:await touchPoints(p,[{x:195-d,y:360},{x:195+d,y:360}])});await p.waitForTimeout(25);}
    await cd.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   }else{
    await f.evaluate(()=>{
@@ -65,8 +69,8 @@ async function touchInFrame(p,f,selector){
   const zoomed=await metrics(p);assert(Math.abs(zoomed.width-initial.width)<1&&Math.abs(zoomed.button-initial.button)<1);assert.equal(await p.locator('#out').inputValue(),beforeInput,'pinch does not insert symbols');
   if(cd){
    const before=await f.locator('#zoomViewport').evaluate(e=>e.scrollTop);
-   await cd.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:350,y:610}]});
-   for(const y of [580,530,480,430,380]){await cd.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:350,y}]});await p.waitForTimeout(35);}
+   await cd.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:await touchPoints(p,[{x:350,y:610}])});
+   for(const y of [580,530,480,430,380]){await cd.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:await touchPoints(p,[{x:350,y}])});await p.waitForTimeout(35);}
    await cd.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await p.waitForTimeout(100);
    assert((await f.locator('#zoomViewport').evaluate(e=>e.scrollTop))>before+5,'one-finger scrolling works after pinch');
   }
