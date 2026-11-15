@@ -33,7 +33,7 @@ jobs:
           node keyboard-v83-15/gestures.cjs
       - name: Chromium and WebKit representative input and layout regression
         run: |
-          for target in chromium/390 chromium/1280 webkit/390 webkit/1280; do
+          for target in webkit/390 webkit/1280 chromium/390 chromium/1280; do
             TEST_CASE=$target node keyboard-v83-15/verify.cjs
           done
       - uses: actions/upload-artifact@v4

@@ -17,9 +17,9 @@ for(const [name,type] of Object.entries({chromium,webkit})){
  await f.waitForFunction(()=>document.querySelector('#vowelQuadrilateral .vowel-dynamic-glyph').style.fontSize==='32px');
  assert.equal(await f.locator('.v83-ipa-key').count(),235);
  assert.equal(await f.locator('#vowelQuadrilateral .v83-ipa-key').count(),28);
- // Compare all hitboxes and complete SVG geometry against the untouched source.
+ // Compare all hitboxes and complete SVG geometry against the user-approved, unchanged v83.14.
  const source=await browser.newPage({viewport:{width,height:844}});
- await source.goto(base+'keyboard-v83-4/');
+ await source.goto(base+'keyboard-v83-14/');
  const sf=await chartFrame(source);
  await sf.locator('.v83-ipa-key').first().waitFor();await sf.evaluate(()=>document.fonts.ready);await sf.waitForFunction(()=>document.querySelector('#vowelQuadrilateral .vowel-dynamic-glyph').style.fontSize==='32px');
  const geometry=()=>({svg:document.querySelector('#vowelQuadrilateral').outerHTML,keys:[...document.querySelectorAll('.v83-ipa-key:not([data-v8310-added])')].map(e=>{let r=e.getBoundingClientRect();return [e.dataset.v83Sym,r.width,r.height,r.x,r.y]})});
