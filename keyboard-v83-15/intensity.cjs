@@ -14,7 +14,7 @@ const {chromium,webkit}=require('playwright'),assert=require('node:assert/strict
  }
  await press('vowels',60);await set(100);await press('vowels',100);await set(0);
  for(const id of ['pulmonicConsonants','nonPulmonicConsonants','vowels','otherSymbols','diacritics','suprasegmentals','tonesAndWordAccents'])await press(id,0);
- await set(35);await press('vowels',35);await p.locator('#contrastToggle').evaluate(e=>e.click());await press('vowels',35);assert((await f.evaluate(()=>__v839DotState().background)).includes('255, 190, 128'));
+ await set(35);await press('vowels',35);await p.locator('#contrastToggle').evaluate(e=>e.click());await press('vowels',35);assert((await f.evaluate(()=>__v839DotState().background)).includes('255, 190, 128'));assert.equal(await p.locator('.glow-setting-row').evaluate(e=>getComputedStyle(e).color),'rgb(34, 34, 34)','settings text stays legible through dark-mode inversion');
  // Changes reach an already selected symbol immediately.
  await set(80);assert((await f.evaluate(()=>__v839DotState().background)).endsWith('0.6)'));
  const svg=await f.locator('#vowelQuadrilateral').evaluate(e=>e.outerHTML),panel=await p.locator('#floatingEditor').evaluate(e=>e.getBoundingClientRect().width);await set(50);assert.equal(await f.locator('#vowelQuadrilateral').evaluate(e=>e.outerHTML),svg);assert.equal(await p.locator('#floatingEditor').evaluate(e=>e.getBoundingClientRect().width),panel);
