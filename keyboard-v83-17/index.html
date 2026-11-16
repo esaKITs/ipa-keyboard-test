@@ -721,6 +721,8 @@ window.esaI18n.ready.then(function(){
    if(el===selector||el.closest("#languageSelect"))return;
    let saved=originalAttrs.get(el);if(!saved){saved={};originalAttrs.set(el,saved);}
    ["title","aria-label","placeholder","alt"].forEach(a=>{
+    // These labels have one owner: the panel controllers using the shared catalog.
+    if(['floatingEditor','inputPanelDrag','inputPanelReset','contrastToggle'].includes(el.id)&&['title','aria-label'].includes(a))return;
     if(!Object.prototype.hasOwnProperty.call(saved,a))saved[a]=el.getAttribute(a);
     if(saved[a]!==null){const value=translateText(saved[a]);if(el.getAttribute(a)!==value)el.setAttribute(a,value);}
    });
