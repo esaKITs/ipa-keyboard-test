@@ -1,0 +1,70 @@
+name: Verify and publish IPA Keyboard v83.19
+on:
+  push:
+    branches: [work/vowel-v060-20261111]
+    paths: ['keyboard-v83-19/**', '.github/workflows/publish-keyboard-v8319.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages-v8319
+  cancel-in-progress: true
+jobs:
+  verify:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Excel and generated CSV agree
+        run: python3 keyboard-v83-19/tools/export-translations.py keyboard-v83-19/translations.xlsx keyboard-v83-19/translations.csv --check
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.61.1
+      - run: npx playwright install chromium webkit --with-deps
+      - name: Start preview server
+        run: nohup python3 -m http.server 8765 >/tmp/ipa8319-http.log 2>&1 &
+      - name: Verify complete translations and preserved IPA input in five languages
+        run: node keyboard-v83-19/translations.cjs
+      - name: Verify glow strength, off, persistence, and translations
+        run: node keyboard-v83-19/intensity.cjs
+      - name: Verify colours, scaled glow, and gestures
+        run: |
+          node keyboard-v83-19/feedback.cjs
+          node keyboard-v83-19/inline.cjs
+          node keyboard-v83-19/gestures.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa8319-screenshots
+          path: qa8319/
+      - name: Preserve all existing site versions
+        run: |
+          mkdir public
+          rsync -a --exclude=.git --exclude=.github --exclude=public --exclude=node_modules --exclude=qa8319 ./ public/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}keyboard-v83-19/
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Confirm public v83.19
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsSL https://esakits.github.io/ipa-keyboard-test/keyboard-v83-19/ -o /tmp/v8319.html && curl -fsSL https://esakits.github.io/ipa-keyboard-test/keyboard-v83-19/chart.html -o /tmp/v8319chart.html && grep -q '83.19 IPA Keyboard TEST' /tmp/v8319.html && grep -q 'esaI18n.rows' /tmp/v8319chart.html && curl -fsSL https://esakits.github.io/ipa-keyboard-test/keyboard-v83-19/translations.csv -o /tmp/v8319translations.csv && grep -q 'tr0001' /tmp/v8319translations.csv; then
+              echo 'Public v83.19 confirmed'
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
+
+
