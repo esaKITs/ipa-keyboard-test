@@ -2,7 +2,7 @@ const {chromium,webkit}=require('playwright'),assert=require('node:assert/strict
 const base=process.env.TEST_BASE||'http://127.0.0.1:8765/';fs.mkdirSync('qa8317',{recursive:true});
 async function chart(p){await p.frameLocator('#v83ChartFrame').locator('.v83-ipa-key').first().waitFor();const f=await(await p.locator('#v83ChartFrame').elementHandle()).contentFrame();await f.waitForFunction(()=>typeof window.esaSetLocale==='function');return f;}
 async function snapshot(p,f){
- const ui=await p.evaluate(()=>['.app-header','#floatingEditor','.v83-label'].map(selector=>{const root=document.querySelector(selector);return{text:root.textContent.replace(/83\.(16|17)/g,'VERSION'),attrs:[root,...root.querySelectorAll('*')].map(el=>['title','aria-label','placeholder','alt'].map(a=>el.getAttribute(a)))};}));
+ const ui=await p.evaluate(()=>['.app-header','#floatingEditor','.v83-label'].map(selector=>{const root=document.querySelector(selector);return{text:root.textContent.replace(/83\.(16|17)/g,'VERSION'),attrs:[root,...root.querySelectorAll('*')].map(el=>['title','aria-label','placeholder','alt'].map(a=>(['floatingEditor','inputPanelDrag','contrastToggle','inputPanelReset'].includes(el.id)&&['title','aria-label'].includes(a))?null:el.getAttribute(a)))};}));
  const text=await f.evaluate(()=>{const walker=document.createTreeWalker(document.getElementById('chart'),NodeFilter.SHOW_TEXT),values=[];while(walker.nextNode()){const n=walker.currentNode;if(!n.parentElement?.closest('.v83-ipa-key,svg,.source-note,details,a')&&n.nodeValue.trim())values.push(n.nodeValue);}return values;});
  return{ui,text};
 }
@@ -17,7 +17,11 @@ async function snapshot(p,f){
   for(const locale of ['ja','en','pt-BR','fa','ja-osaka','en','ja']){
    await old.locator('#languageSelect').selectOption(locale);await p.locator('#languageSelect').selectOption(locale);
    await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await old.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
-   assert.deepEqual(await snapshot(p,f),await snapshot(old,of),'all translated UI/attributes/chart labels match approved v83.16: '+name+'/'+width+'/'+locale);
+   assert.deepEqual(await snapshot(p,f),await snapshot(old,of),'visible text and unchanged attributes match v83.16: '+name+'/'+width+'/'+locale);
+   const expected=await p.evaluate(lang=>['IPA入力','入力パネルを移動。矢印キーでも移動できます','入力パネルの位置を戻す','白黒反転'].map(key=>esaI18n.t(key,lang,'panel')),locale);
+   const actual=await p.evaluate(()=>['floatingEditor','inputPanelDrag','inputPanelReset','contrastToggle'].map(id=>document.getElementById(id).getAttribute('aria-label')));
+   assert.deepEqual(actual,expected,'formerly overridden panel accessibility labels use the shared master in every language');
+   assert.equal(await p.locator('#inputPanelReset').getAttribute('title'),expected[2]);assert.equal(await p.locator('#contrastToggle').getAttribute('title'),expected[3]);
   }
   assert.equal(downloads,1,'one CSV download per app load, including all language switches');assert.deepEqual(errors,[]);
   await p.locator('#languageSelect').selectOption('fa');await p.screenshot({path:`qa8317/${name}-${width}-shared-persian.png`});
